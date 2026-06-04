@@ -1,0 +1,829 @@
+grupos:
+  100:
+    nome: "ABERTURA_CONTA_CORRENTE"
+    descricao: "Onboarding digital de PF/PJ"
+    ativo: true
+    parametros_entrada:
+      - nome: "cpf_cnpj"
+        tipo: STRING
+        obrigatorio: true
+        descricao: "CPF ou CNPJ do cliente"
+        validacao:
+          regex: "^\\d{11}$|^\\d{14}$"
+      - nome: "canal_origem"
+        tipo: STRING
+        obrigatorio: true
+        descricao: "Canal de origem da solicitação"
+      - nome: "biometria_hash"
+        tipo: STRING
+        obrigatorio: false
+        descricao: "Hash da biometria facial"
+    consistencias:
+      - id: 101
+        nome: "validar_documento_receita"
+        descricao: "Valida documento na Receita Federal"
+        procedure_ref: "PK_ONBOARDING.VALIDAR_DOCUMENTO_RECEITA"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "cpf_cnpj"
+            destino: "P_CPF_CNPJ"
+      - id: 102
+        nome: "verificar_listas_restritivas"
+        descricao: "Verifica listas restritivas"
+        procedure_ref: "PK_ONBOARDING.VERIFICAR_LISTAS_RESTRITIVAS"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "cpf_cnpj"
+            destino: "P_CPF_CNPJ"
+      - id: 103
+        nome: "validar_biometria_face"
+        descricao: "Valida biometria facial"
+        procedure_ref: "PK_ONBOARDING.VALIDAR_BIOMETRIA_FACE"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: false
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "biometria_hash"
+            destino: "P_BIOMETRIA_HASH"
+      - id: 104
+        nome: "consultar_restricoes_financeiras"
+        descricao: "Consulta restricoes financeiras"
+        procedure_ref: "PK_ONBOARDING.CONSULTAR_RESTRICOES_FINANCEIRAS"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "cpf_cnpj"
+            destino: "P_CPF_CNPJ"
+      - id: 105
+        nome: "criar_conta_core_bancario"
+        descricao: "Cria conta no core bancario"
+        procedure_ref: "PK_ONBOARDING.CRIAR_CONTA_CORE_BANCARIO"
+        tipo: ESCRITA
+        timeout_ms: 10000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "cpf_cnpj"
+            destino: "P_CPF_CNPJ"
+          - origem: "canal_origem"
+            destino: "P_CANAL_ORIGEM"
+
+  200:
+    nome: "ANALISE_CREDITO_PESSOAL"
+    descricao: "Emprestimo pessoal, cheque especial"
+    ativo: true
+    parametros_entrada:
+      - nome: "cod_cli"
+        tipo: INTEGER
+        obrigatorio: true
+        descricao: "ID interno do cliente"
+      - nome: "valor_solicitado"
+        tipo: BIGDECIMAL
+        obrigatorio: true
+        descricao: "Valor do emprestimo desejado"
+        validacao:
+          min: 100.00
+          max: 50000.00
+      - nome: "qtd_parcelas"
+        tipo: INTEGER
+        obrigatorio: true
+        descricao: "Quantidade de parcelas"
+        validacao:
+          min: 1
+          max: 96
+    consistencias:
+      - id: 201
+        nome: "calcular_score_interno"
+        descricao: "Algoritmo proprietario baseado em historico e bureau"
+        procedure_ref: "PK_SCORE.CALCULAR_SCORE_INTERNO"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+      - id: 202
+        nome: "consultar_scr_bacen"
+        descricao: "Consulta ao Sistema de Informacoes de Credito"
+        procedure_ref: "PK_BACEN.CONSULTAR_SCR"
+        tipo: LEITURA
+        timeout_ms: 8000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+      - id: 203
+        nome: "validar_renda_comprovada"
+        descricao: "Cruzamento de renda declarada e comprovada"
+        procedure_ref: "PK_RENDA.VALIDAR_RENDA"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+      - id: 204
+        nome: "analisar_capacidade_pagamento"
+        descricao: "Calculo de comprometimento de renda"
+        procedure_ref: "PK_CREDITO.ANALISAR_CAPACIDADE"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+          - origem: "valor_solicitado"
+            destino: "P_VALOR_SOLICITADO"
+          - origem: "qtd_parcelas"
+            destino: "P_QTD_PARCELAS"
+      - id: 205
+        nome: "gerar_proposta_comercial"
+        descricao: "Gera proposta comercial com parcelas, CET e taxas"
+        procedure_ref: "PK_PROPOSTA.GERAR_PROPOSTA"
+        tipo: ESCRITA
+        timeout_ms: 10000
+        obrigatoria_para_aprovacao: false
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+          - origem: "valor_solicitado"
+            destino: "P_VALOR"
+          - origem: "qtd_parcelas"
+            destino: "P_PARCELAS"
+
+  300:
+    nome: "OPERACOES_PIX"
+    descricao: "Transferencias instantaneas"
+    ativo: true
+    parametros_entrada:
+      - nome: "agencia"
+        tipo: STRING
+        obrigatorio: true
+        descricao: "Agencia de origem"
+      - nome: "conta"
+        tipo: STRING
+        obrigatorio: true
+        descricao: "Conta de origem"
+      - nome: "chave_destino"
+        tipo: STRING
+        obrigatorio: true
+        descricao: "Chave PIX de destino"
+      - nome: "valor"
+        tipo: BIGDECIMAL
+        obrigatorio: true
+        descricao: "Valor da transferencia"
+        validacao:
+          min: 0.01
+          max: 50000.00
+      - nome: "id_solicitacao"
+        tipo: STRING
+        obrigatorio: true
+        descricao: "ID unico da solicitacao"
+    consistencias:
+      - id: 301
+        nome: "validar_chave_pix"
+        descricao: "Valida chave PIX de destino"
+        procedure_ref: "PK_PIX.VALIDAR_CHAVE_PIX"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "chave_destino"
+            destino: "P_CHAVE_DESTINO"
+      - id: 302
+        nome: "verificar_saldo_disponivel"
+        descricao: "Verifica saldo disponivel na conta de origem"
+        procedure_ref: "PK_PIX.VERIFICAR_SALDO_DISPONIVEL"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "agencia"
+            destino: "P_AGENCIA"
+          - origem: "conta"
+            destino: "P_CONTA"
+          - origem: "valor"
+            destino: "P_VALOR"
+      - id: 303
+        nome: "checar_limites_operacionais"
+        descricao: "Verifica limites operacionais da conta"
+        procedure_ref: "PK_PIX.CHECAR_LIMITES_OPERACIONAIS"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "agencia"
+            destino: "P_AGENCIA"
+          - origem: "conta"
+            destino: "P_CONTA"
+          - origem: "valor"
+            destino: "P_VALOR"
+      - id: 304
+        nome: "analisar_padrao_fraude"
+        descricao: "Analisa padrao de fraude da transacao"
+        procedure_ref: "PK_PIX.ANALISAR_PADRAO_FRAUDE"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: false
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "agencia"
+            destino: "P_AGENCIA_ORIGEM"
+          - origem: "conta"
+            destino: "P_CONTA_ORIGEM"
+          - origem: "chave_destino"
+            destino: "P_CHAVE_DESTINO"
+          - origem: "valor"
+            destino: "P_VALOR"
+      - id: 305
+        nome: "executar_debito_credito_core"
+        descricao: "Executa debito na origem e credito no destino"
+        procedure_ref: "PK_PIX.EXECUTAR_DEBITO_CREDITO_CORE"
+        tipo: ESCRITA
+        timeout_ms: 10000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "agencia"
+            destino: "P_AGENCIA_ORIGEM"
+          - origem: "conta"
+            destino: "P_CONTA_ORIGEM"
+          - origem: "chave_destino"
+            destino: "P_CHAVE_DESTINO"
+          - origem: "valor"
+            destino: "P_VALOR"
+          - origem: "id_solicitacao"
+            destino: "P_ID_SOLICITACAO"
+
+  400:
+    nome: "COBRANCA_BOLETOS"
+    descricao: "Emissao e gestao de titulos"
+    ativo: true
+    parametros_entrada:
+      - nome: "cpf_cnpj_pagador"
+        tipo: STRING
+        obrigatorio: true
+        descricao: "CPF/CNPJ do pagador"
+      - nome: "valor"
+        tipo: BIGDECIMAL
+        obrigatorio: true
+        descricao: "Valor do titulo"
+        validacao:
+          min: 1.00
+          max: 999999.99
+      - nome: "data_vencimento"
+        tipo: LOCALDATE
+        obrigatorio: true
+        descricao: "Data de vencimento"
+      - nome: "nosso_numero"
+        tipo: STRING
+        obrigatorio: false
+        descricao: "Nosso numero do titulo"
+    consistencias:
+      - id: 401
+        nome: "validar_convenio_cedente"
+        descricao: "Valida convenio do cedente"
+        procedure_ref: "PK_BOLETOS.VALIDAR_CONVENIO_CEDENTE"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "cpf_cnpj_pagador"
+            destino: "P_CPF_CNPJ_PAGADOR"
+      - id: 402
+        nome: "calcular_encargos_legais"
+        descricao: "Calcula encargos legais do titulo"
+        procedure_ref: "PK_BOLETOS.CALCULAR_ENCARGOS_LEGAIS"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: false
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "valor"
+            destino: "P_VALOR"
+          - origem: "data_vencimento"
+            destino: "P_DATA_VENCIMENTO"
+      - id: 403
+        nome: "gerar_codigo_barras"
+        descricao: "Gera codigo de barras do boleto"
+        procedure_ref: "PK_BOLETOS.GERAR_CODIGO_BARRAS"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "valor"
+            destino: "P_VALOR"
+          - origem: "cpf_cnpj_pagador"
+            destino: "P_CPF_CNPJ_PAGADOR"
+      - id: 404
+        nome: "registrar_titulo_cip"
+        descricao: "Registra titulo na CIP"
+        procedure_ref: "PK_BOLETOS.REGISTRAR_TITULO_CIP"
+        tipo: ESCRITA
+        timeout_ms: 10000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "nosso_numero"
+            destino: "P_NOSSO_NUMERO"
+          - origem: "valor"
+            destino: "P_VALOR"
+          - origem: "cpf_cnpj_pagador"
+            destino: "P_CPF_CNPJ_PAGADOR"
+          - origem: "data_vencimento"
+            destino: "P_DATA_VENCIMENTO"
+      - id: 405
+        nome: "baixar_titulo_pagamento"
+        descricao: "Baixa titulo por pagamento"
+        procedure_ref: "PK_BOLETOS.BAIXAR_TITULO_PAGAMENTO"
+        tipo: ESCRITA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: false
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "nosso_numero"
+            destino: "P_NOSSO_NUMERO"
+
+  500:
+    nome: "GESTAO_CARTAO_CREDITO"
+    descricao: "Emissao, limite e ativacao"
+    ativo: true
+    parametros_entrada:
+      - nome: "cod_cli"
+        tipo: INTEGER
+        obrigatorio: true
+        descricao: "ID interno do cliente"
+      - nome: "produto_id"
+        tipo: INTEGER
+        obrigatorio: true
+        descricao: "ID do produto cartao"
+      - nome: "limite_desejado"
+        tipo: BIGDECIMAL
+        obrigatorio: false
+        descricao: "Limite de credito desejado"
+    consistencias:
+      - id: 501
+        nome: "validar_solicitacao_cartao"
+        descricao: "Valida solicitacao de cartao"
+        procedure_ref: "PK_CARTAO.VALIDAR_SOLICITACAO_CARTAO"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+      - id: 502
+        nome: "definir_limite_credito"
+        descricao: "Define limite de credito"
+        procedure_ref: "PK_CARTAO.DEFINIR_LIMITE_CREDITO"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+          - origem: "limite_desejado"
+            destino: "P_LIMITE_DESEJADO"
+      - id: 503
+        nome: "verificar_adesao_servicos"
+        descricao: "Verifica adesao a servicos"
+        procedure_ref: "PK_CARTAO.VERIFICAR_ADESAO_SERVICOS"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: false
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+          - origem: "produto_id"
+            destino: "P_PRODUTO_ID"
+      - id: 504
+        nome: "emitir_cartao_virtual_fisico"
+        descricao: "Emite cartao virtual e fisico"
+        procedure_ref: "PK_CARTAO.EMITIR_CARTAO_VIRTUAL_FISICO"
+        tipo: ESCRITA
+        timeout_ms: 10000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+          - origem: "produto_id"
+            destino: "P_PRODUTO_ID"
+      - id: 505
+        nome: "ativar_cartao_adquirente"
+        descricao: "Ativa cartao na adquirente"
+        procedure_ref: "PK_CARTAO.ATIVAR_CARTAO_ADQUIRENTE"
+        tipo: ESCRITA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+
+  600:
+    nome: "COMPLIANCE_KYC_AML"
+    descricao: "Prevencao a lavagem e atualizacao cadastral"
+    ativo: true
+    parametros_entrada:
+      - nome: "cod_cli"
+        tipo: INTEGER
+        obrigatorio: true
+        descricao: "ID interno do cliente"
+      - nome: "motivo_analise"
+        tipo: STRING
+        obrigatorio: true
+        descricao: "Motivo da analise de compliance"
+    consistencias:
+      - id: 601
+        nome: "monitorar_transacoes_suspeitas"
+        descricao: "Monitora transacoes suspeitas"
+        procedure_ref: "PK_COMPLIANCE.MONITORAR_TRANSACOES_SUSPEITAS"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+      - id: 602
+        nome: "validar_origem_fundos"
+        descricao: "Valida origem dos fundos"
+        procedure_ref: "PK_COMPLIANCE.VALIDAR_ORIGEM_FUNDOS"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+          - origem: "motivo_analise"
+            destino: "P_MOTIVO_ANALISE"
+      - id: 603
+        nome: "atualizar_cadastro_cliente"
+        descricao: "Atualiza cadastro do cliente"
+        procedure_ref: "PK_COMPLIANCE.ATUALIZAR_CADASTRO_CLIENTE"
+        tipo: ESCRITA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: false
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+      - id: 604
+        nome: "gerar_comunicado_coaf"
+        descricao: "Gera comunicado para o COAF"
+        procedure_ref: "PK_COMPLIANCE.GERAR_COMUNICADO_COAF"
+        tipo: ESCRITA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: false
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+      - id: 605
+        nome: "bloquear_preventivo_conta"
+        descricao: "Bloqueia conta preventivamente"
+        procedure_ref: "PK_COMPLIANCE.BLOQUEAR_PREVENTIVO_CONTA"
+        tipo: ESCRITA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: false
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+
+  700:
+    nome: "RECUPERACAO_CREDITO"
+    descricao: "Inadimplencia e renegociacao"
+    ativo: true
+    parametros_entrada:
+      - nome: "contrato_id"
+        tipo: LONG
+        obrigatorio: true
+        descricao: "ID do contrato"
+      - nome: "qtd_parcelas_ren"
+        tipo: INTEGER
+        obrigatorio: true
+        descricao: "Quantidade de parcelas para renegociacao"
+        validacao:
+          min: 1
+          max: 120
+      - nome: "percentual_desconto"
+        tipo: BIGDECIMAL
+        obrigatorio: false
+        descricao: "Percentual de desconto para renegociacao"
+    consistencias:
+      - id: 701
+        nome: "identificar_vencimento_atraso"
+        descricao: "Identifica vencimento em atraso"
+        procedure_ref: "PK_RECUPERACAO.IDENTIFICAR_VENCIMENTO_ATRASO"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "contrato_id"
+            destino: "P_CONTRATO_ID"
+      - id: 702
+        nome: "calcular_atualizacao_monetaria"
+        descricao: "Calcula atualizacao monetaria"
+        procedure_ref: "PK_RECUPERACAO.CALCULAR_ATUALIZACAO_MONETARIA"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "contrato_id"
+            destino: "P_CONTRATO_ID"
+      - id: 703
+        nome: "verificar_acordo_possivel"
+        descricao: "Verifica se acordo e possivel"
+        procedure_ref: "PK_RECUPERACAO.VERIFICAR_ACORDO_POSSIVEL"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "contrato_id"
+            destino: "P_CONTRATO_ID"
+          - origem: "qtd_parcelas_ren"
+            destino: "P_QTD_PARCELAS_REN"
+          - origem: "percentual_desconto"
+            destino: "P_PERCENTUAL_DESCONTO"
+      - id: 704
+        nome: "registrar_protesto_cartorio"
+        descricao: "Registra protesto em cartorio"
+        procedure_ref: "PK_RECUPERACAO.REGISTRAR_PROTESTO_CARTORIO"
+        tipo: ESCRITA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: false
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "contrato_id"
+            destino: "P_CONTRATO_ID"
+      - id: 705
+        nome: "atualizar_central_risco"
+        descricao: "Atualiza central de risco"
+        procedure_ref: "PK_RECUPERACAO.ATUALIZAR_CENTRAL_RISCO"
+        tipo: ESCRITA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: false
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "contrato_id"
+            destino: "P_CONTRATO_ID"
+
+  800:
+    nome: "INVESTIMENTOS_RENDA_FIXA"
+    descricao: "CDB, LCI, LCA, Tesouro Direto"
+    ativo: true
+    parametros_entrada:
+      - nome: "cod_cli"
+        tipo: INTEGER
+        obrigatorio: true
+        descricao: "ID interno do cliente"
+      - nome: "produto_id"
+        tipo: INTEGER
+        obrigatorio: true
+        descricao: "ID do produto de investimento"
+      - nome: "valor_aplicacao"
+        tipo: BIGDECIMAL
+        obrigatorio: true
+        descricao: "Valor da aplicacao"
+        validacao:
+          min: 100.00
+          max: 999999.99
+    consistencias:
+      - id: 801
+        nome: "validar_perfil_investidor"
+        descricao: "Valida perfil do investidor"
+        procedure_ref: "PK_INVESTIMENTOS.VALIDAR_PERFIL_INVESTIDOR"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+      - id: 802
+        nome: "consultar_disponibilidade_produtos"
+        descricao: "Consulta disponibilidade de produtos"
+        procedure_ref: "PK_INVESTIMENTOS.CONSULTAR_DISPONIBILIDADE_PRODUTOS"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "produto_id"
+            destino: "P_PRODUTO_ID"
+      - id: 803
+        nome: "calcular_rentabilidade_liquida"
+        descricao: "Calcula rentabilidade liquida"
+        procedure_ref: "PK_INVESTIMENTOS.CALCULAR_RENTABILIDADE_LIQUIDA"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: false
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "valor_aplicacao"
+            destino: "P_VALOR_APLICACAO"
+          - origem: "produto_id"
+            destino: "P_PRODUTO_ID"
+      - id: 804
+        nome: "registrar_operacao_b3_cetip"
+        descricao: "Registra operacao na B3/CETIP"
+        procedure_ref: "PK_INVESTIMENTOS.REGISTRAR_OPERACAO_B3_CETIP"
+        tipo: ESCRITA
+        timeout_ms: 10000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+          - origem: "produto_id"
+            destino: "P_PRODUTO_ID"
+          - origem: "valor_aplicacao"
+            destino: "P_VALOR_APLICACAO"
+      - id: 805
+        nome: "atualizar_posicao_cliente"
+        descricao: "Atualiza posicao do cliente"
+        procedure_ref: "PK_INVESTIMENTOS.ATUALIZAR_POSICAO_CLIENTE"
+        tipo: ESCRITA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: false
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "cod_cli"
+            destino: "P_COD_CLI"
+
+  900:
+    nome: "FINANCIAMENTO_GARANTIA_REAL"
+    descricao: "Imobiliario, veicular e rural"
+    ativo: true
+    parametros_entrada:
+      - nome: "garantia_id"
+        tipo: LONG
+        obrigatorio: true
+        descricao: "ID do bem em garantia"
+      - nome: "valor_financiado"
+        tipo: BIGDECIMAL
+        obrigatorio: true
+        descricao: "Valor financiado"
+        validacao:
+          min: 1000.00
+          max: 9999999.99
+      - nome: "renda_comprovada"
+        tipo: BIGDECIMAL
+        obrigatorio: true
+        descricao: "Renda comprovada do cliente"
+    consistencias:
+      - id: 901
+        nome: "avaliar_bem_garantia"
+        descricao: "Avalia bem em garantia"
+        procedure_ref: "PK_GARANTIAS.AVALIAR_BEM_GARANTIA"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "garantia_id"
+            destino: "P_GARANTIA_ID"
+      - id: 902
+        nome: "validar_escritura_registro"
+        descricao: "Valida escritura e registro"
+        procedure_ref: "PK_GARANTIAS.VALIDAR_ESCRITURA_REGISTRO"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "garantia_id"
+            destino: "P_GARANTIA_ID"
+      - id: 903
+        nome: "calcular_cet_taxa_efetiva"
+        descricao: "Calcula CET e taxa efetiva"
+        procedure_ref: "PK_GARANTIAS.CALCULAR_CET_TAXA_EFETIVA"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "valor_financiado"
+            destino: "P_VALOR_FINANCIADO"
+          - origem: "renda_comprovada"
+            destino: "P_RENDA_COMPROVADA"
+      - id: 904
+        nome: "verificar_seguro_obrigatorio"
+        descricao: "Verifica seguro obrigatorio"
+        procedure_ref: "PK_GARANTIAS.VERIFICAR_SEGURO_OBRIGATORIO"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "garantia_id"
+            destino: "P_GARANTIA_ID"
+      - id: 905
+        nome: "registrar_alienacao_fiduciaria"
+        descricao: "Registra alienacao fiduciaria"
+        procedure_ref: "PK_GARANTIAS.REGISTRAR_ALIENACAO_FIDUCIARIA"
+        tipo: ESCRITA
+        timeout_ms: 10000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "garantia_id"
+            destino: "P_GARANTIA_ID"
+
+  1000:
+    nome: "CONCILIACAO_FECHAMENTO"
+    descricao: "Operacional/contabil diario"
+    ativo: true
+    parametros_entrada:
+      - nome: "data_processamento"
+        tipo: LOCALDATE
+        obrigatorio: true
+        descricao: "Data do processamento"
+      - nome: "agencia_codigo"
+        tipo: STRING
+        obrigatorio: false
+        descricao: "Codigo da agencia"
+    consistencias:
+      - id: 1001
+        nome: "validar_saldos_caixa_terminais"
+        descricao: "Valida saldos de caixa dos terminais"
+        procedure_ref: "PK_FECHAMENTO.VALIDAR_SALDOS_CAIXA_TERMINAIS"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "data_processamento"
+            destino: "P_DATA_PROCESSAMENTO"
+      - id: 1002
+        nome: "conciliar_extratos_bancarios"
+        descricao: "Concilia extratos bancarios"
+        procedure_ref: "PK_FECHAMENTO.CONCILIAR_EXTRATOS_BANCARIOS"
+        tipo: LEITURA
+        timeout_ms: 8000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "data_processamento"
+            destino: "P_DATA_PROCESSAMENTO"
+      - id: 1003
+        nome: "verificar_lancamentos_pendentes"
+        descricao: "Verifica lancamentos pendentes"
+        procedure_ref: "PK_FECHAMENTO.VERIFICAR_LANCAMENTOS_PENDENTES"
+        tipo: LEITURA
+        timeout_ms: 5000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "data_processamento"
+            destino: "P_DATA_PROCESSAMENTO"
+      - id: 1004
+        nome: "calcular_provisoes_reservas"
+        descricao: "Calcula provisoes e reservas"
+        procedure_ref: "PK_FECHAMENTO.CALCULAR_PROVISOES_RESERVAS"
+        tipo: ESCRITA
+        timeout_ms: 10000
+        obrigatoria_para_aprovacao: false
+        abortar_grupo_em_falha: false
+        parametros:
+          - origem: "data_processamento"
+            destino: "P_DATA_PROCESSAMENTO"
+      - id: 1005
+        nome: "fechar_contabilidade_dia"
+        descricao: "Fecha contabilidade do dia"
+        procedure_ref: "PK_FECHAMENTO.FECHAR_CONTABILIDADE_DIA"
+        tipo: ESCRITA
+        timeout_ms: 15000
+        obrigatoria_para_aprovacao: true
+        abortar_grupo_em_falha: true
+        parametros:
+          - origem: "data_processamento"
+            destino: "P_DATA_PROCESSAMENTO"
