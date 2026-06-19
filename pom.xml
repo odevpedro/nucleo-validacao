@@ -12,10 +12,10 @@
     </parent>
 
     <groupId>com.empresa</groupId>
-    <artifactId>grupo-consistencias</artifactId>
+    <artifactId>nucleo-validacao</artifactId>
     <version>1.0.0</version>
-    <name>grupo-consistencias</name>
-    <description>Biblioteca/gateway genérico para execução de grupos de consistências PL/SQL</description>
+    <name>nucleo-validacao</name>
+    <description>Núcleo de validação genérico para execução de regras bancárias via PL/SQL</description>
 
     <properties>
         <java.version>17</java.version>

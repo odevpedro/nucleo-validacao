@@ -1,7 +1,7 @@
 services:
   oracle:
     image: container-registry.oracle.com/database/free:latest
-    container_name: grupo-consistencias-oracle
+    container_name: nucleo-validacao-oracle
     ports:
       - "1521:1521"
     environment:

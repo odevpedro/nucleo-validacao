@@ -9,7 +9,7 @@
 
 - [Visao Geral da Arquitetura](#visao-geral-da-arquitetura)
 - [Convencoes deste Documento](#convencoes-deste-documento)
-- [Feature: Execucao de Grupo de Consistencias](#feature-execucao-de-grupo-de-consistencias)
+- [Feature: Execucao de Grupo de Consistencias](#feature-execucao-de-grupo-de-validacoes)
 - [Feature: Auditoria Transacional Independente](#feature-auditoria-transacional-independente)
 - [Feature: Monitoramento de Compliance](#feature-monitoramento-de-compliance)
 
@@ -65,7 +65,7 @@ HTTP Request
 
 ## Resumo
 
-Gateway generico que recebe `idGrupoConsistencia` + lista de parametros, descobre a configuracao do grupo no YAML, valida os parametros, executa cada consistencia (procedure PL/SQL) com binding automatico, consolida os resultados e retorna JSON padronizado.
+Gateway generico que recebe `idGrupoConsistencia` + lista de parametros, descobre a configuracao do grupo no YAML, valida os parametros, executa cada validacao (procedure PL/SQL) com binding automatico, consolida os resultados e retorna JSON padronizado.
 
 **Motivacao:** Simular arquitetura bancaria real onde Java atua apenas como orquestrador e a regra de negocio fica em PL/SQL.
 **Resultado:** Aplicacao consumidora envia apenas o ID do grupo e parametros; nao precisa conhecer as procedures internas.
@@ -78,7 +78,7 @@ Gateway generico que recebe `idGrupoConsistencia` + lista de parametros, descobr
 
 - **Tipo:** HTTP REST
 - **Arquivo:** `GrupoConsistenciaController.java`
-- **Rota:** `POST /api/grupos-consistencia/executar`
+- **Rota:** `POST /api/grupos-validacao/executar`
 - **Autenticacao:** Nao implementada (projeto de estudo)
 
 A requisicao chega com `idGrupoConsistencia`, `correlationId` (opcional) e `parametros` (lista generica).
@@ -125,11 +125,11 @@ Fluxo completo:
 8. Validar parametros obrigatorios, tipos, regras
 9. Se houver erro de validacao, atualizar grupo para `FALHA_VALIDACAO` e retornar erro
 10. Atualizar grupo para `EXECUTANDO`
-11. Para cada consistencia configurada:
-    - Criar rastro da consistencia com `EXECUTANDO`
+11. Para cada validacao configurada:
+    - Criar rastro da validacao com `EXECUTANDO`
     - Executar procedure via `ProcedureExecutor`
     - Se falhou e `abortar_grupo_em_falha=true`, interromper proximas
-    - Atualizar rastro da consistencia
+    - Atualizar rastro da validacao
 12. Consolidar resultado do grupo via `ResultadoGrupoConsolidador`
 13. Atualizar rastro do grupo com estado final
 14. Retornar `GrupoConsistenciaResponseDTO`
@@ -162,7 +162,7 @@ Fluxo completo:
 
 | Servico | Operacao | Timeout | Retry |
 |---------|----------|---------|-------|
-| Oracle Database (CallableStatement) | Execucao de procedures | Por consistencia (YAML) | Nao |
+| Oracle Database (CallableStatement) | Execucao de procedures | Por validacao (YAML) | Nao |
 
 ---
 
@@ -177,9 +177,9 @@ Fluxo completo:
   "nomeGrupoConsistencia": "ANALISE_CREDITO_PESSOAL",
   "estadoGrupo": "FINALIZADO_SUCESSO",
   "resultadoNegocioGrupo": "APROVADO",
-  "mensagemGrupoConsistencia": "Grupo de consistencias executado com sucesso",
+  "mensagemGrupoConsistencia": "Grupo de validacoes executado com sucesso",
   "correlationId": "uuid",
-  "consistencias": [
+  "validacoes": [
     {
       "idConsistencia": 201,
       "nomeConsistencia": "calcular_score_interno",
@@ -241,7 +241,7 @@ sequenceDiagram
     participant Executor
     participant OracleDB
 
-    Client->>Controller: POST /api/grupos-consistencia/executar
+    Client->>Controller: POST /api/grupos-validacao/executar
     Controller->>Gateway: executar(request)
     Gateway->>YamlLoader: getGrupo(idGrupo)
     YamlLoader-->>Gateway: GrupoDefinicaoDTO
@@ -251,9 +251,9 @@ sequenceDiagram
     Gateway->>Validator: validar(grupo, parametros)
     Validator-->>Gateway: erros (ou vazio)
     Gateway->>TrackingRepo: atualizarEstadoGrupo(EXECUTANDO)
-    loop Para cada consistencia
+    loop Para cada validacao
         Gateway->>TrackingRepo: criarRastroConsistencia(EXECUTANDO)
-        Gateway->>Executor: executar(consistencia, parametros)
+        Gateway->>Executor: executar(validacao, parametros)
         Executor->>OracleDB: {call PK_SCORE.CALCULAR_SCORE_INTERNO(?,?,?,?)}
         OracleDB-->>Executor: resultado
         Executor-->>Gateway: ConsistenciaResultadoDTO
@@ -284,7 +284,7 @@ sequenceDiagram
 |-------|---------|
 | **Status** | Aceita |
 | **Data** | 2026-06-03 |
-| **Contexto** | Definir grupos, consistencias, bindings e regras de forma declarativa sem depender de banco |
+| **Contexto** | Definir grupos, validacoes, bindings e regras de forma declarativa sem depender de banco |
 | **Decisao** | Usar `configuracoes-grupos.yaml` carregado via SnakeYAML no startup |
 | **Consequencias** | Alteracoes requerem restart; simplicidade e clareza na configuracao |
 
@@ -316,8 +316,8 @@ Registro de auditoria em duas tabelas (`RASTRO_GRUPO` e `RASTRO_CONSISTENCIA`) c
 
 1. Antes da execucao: INSERT em `RASTRO_GRUPO` com estado `CRIADO`
 2. Durante validacao: UPDATE para `VALIDANDO`
-3. Antes de cada consistencia: INSERT em `RASTRO_CONSISTENCIA` com `EXECUTANDO`
-4. Apos cada consistencia: UPDATE com resultado tecnico, negocio, tempo, payload
+3. Antes de cada validacao: INSERT em `RASTRO_CONSISTENCIA` com `EXECUTANDO`
+4. Apos cada validacao: UPDATE com resultado tecnico, negocio, tempo, payload
 5. Final: UPDATE do grupo com estado consolidado e JSON dos resultados
 
 Todas as operacoes usam `@Transactional(propagation = Propagation.REQUIRES_NEW)`.

@@ -1,6 +1,6 @@
-# grupo-consistencias
+# nucleo-validacao
 
-> Gateway generico para execucao de grupos de consistencias bancarias via PL/SQL. A aplicacao Java atua como biblioteca que descobre, valida e executa procedures Oracle associadas a contextos de negocio bancario, consolidando resultados e registrando auditoria independente.
+> Gateway generico para execucao de grupos de validacoes bancarias via PL/SQL. A aplicacao Java atua como biblioteca que descobre, valida e executa procedures Oracle associadas a contextos de negocio bancario, consolidando resultados e registrando auditoria independente.
 
 ## Stack & Arquitetura
 
@@ -20,23 +20,23 @@
 ## Estrutura de Pastas
 
 ```
-src/main/java/com/empresa/grupoconsistencias/
+src/main/java/com/empresa/nucleovalidacao/
 ├── config/
 │   ├── BancoMetadataDiscovery.java
-│   ├── GrupoConsistenciaYamlLoader.java
+│   ├── NucleoValidacaoYamlLoader.java
 │   └── SchedulingConfig.java
 ├── controller/
-│   ├── GrupoConsistenciaController.java
+│   ├── NucleoValidacaoController.java
 │   └── ComplianceController.java
 ├── model/
 │   ├── dto/           (records de request/response/config)
-│   ├── estado/        (enums: EstadoGrupo, EstadoConsistencia, ResultadoNegocio, etc.)
+│   ├── estado/        (enums: EstadoValidacao, EstadoExecucao, ResultadoNegocio, etc.)
 │   └── metadata/      (ProcedureSignature, ProcedureParameter, ParameterMode)
 ├── repository/
-│   ├── ConsistenciaTrackingRepository.java
+│   ├── ValidacaoTrackingRepository.java
 │   └── ComplianceRepository.java
 ├── service/
-│   ├── GrupoConsistenciaGateway.java
+│   ├── NucleoValidacaoGateway.java
 │   ├── ProcedureExecutor.java
 │   ├── ParametroValidator.java
 │   ├── ResultadoGrupoConsolidador.java
@@ -61,12 +61,12 @@ database/init/
 
 ## Conceito Central
 
-A aplicacao consumidora envia `idGrupoConsistencia` + lista de parametros. O gateway:
+A aplicacao consumidora envia `idGrupoValidacao` + lista de parametros. O gateway:
 
 1. Busca configuracao do grupo no YAML
 2. Valida parametros obrigatorios, tipos e regras (min/max/regex)
-3. Descobre as consistencias do grupo
-4. Para cada consistencia, faz binding dos parametros e executa a procedure PL/SQL via `CallableStatement`
+3. Descobre as validacoes do grupo
+4. Para cada validacao, faz binding dos parametros e executa a procedure PL/SQL via `CallableStatement`
 5. Registra auditoria transacional com `REQUIRES_NEW` (sobrevive a rollback)
 6. Consolida resultado tecnico + resultado de negocio
 7. Retorna JSON padronizado
@@ -86,7 +86,7 @@ Java nao contem regra bancaria principal. Toda regra de negocio esta simulada em
 
 ```bash
 # 1. Clone o repositorio
-git clone <url> && cd grupo-consistencia
+git clone <url> && cd grupo-validacao
 
 # 2. Suba o Oracle Database Free
 docker compose up -d
@@ -102,28 +102,28 @@ A API estara disponivel em `http://localhost:8080`.
 
 O `docker-compose.yml` sobe Oracle Database Free 23c na porta `1521`:
 - **SID:** FREEPDB1
-- **Usuario aplicacao:** APP_CONSISTENCIA / app123
+- **Usuario aplicacao:** APP_VALIDACAO / app123
 - **Usuario dono das packages:** BANK_CORE / bank123
 
 Os scripts SQL em `database/init/` sao executados automaticamente na inicializacao e criam:
-- Usuarios (BANK_CORE, APP_CONSISTENCIA, APP_READONLY, APP_READWRITE, APP_RESTRICTED)
+- Usuarios (BANK_CORE, APP_VALIDACAO, APP_READONLY, APP_READWRITE, APP_RESTRICTED)
 - Tabelas de negocio (CLIENTES, CONTAS, CONTRATOS, CHAVES_PIX, PROPOSTAS_CREDITO, OPERACOES_PIX, BOLETOS)
-- Tabelas de auditoria (RASTRO_GRUPO, RASTRO_CONSISTENCIA)
+- Tabelas de auditoria (RASTRO_VALIDACAO, RASTRO_EXECUCAO)
 - Packages PL/SQL (PK_SCORE, PK_BACEN, PK_RENDA, PK_CREDITO, PK_PROPOSTA, PK_ONBOARDING, PK_PIX, PK_BOLETOS, PK_CARTAO, PK_COMPLIANCE, PK_RECUPERACAO, PK_INVESTIMENTOS, PK_GARANTIAS, PK_FECHAMENTO)
 - Grants para cada usuario
 - Dados mockados
 
 ## Endpoints
 
-### POST /api/grupos-consistencia/executar
+### POST /api/nucleo-validacao/executar
 
-Executa um grupo de consistencias.
+Executa um grupo de validacoes.
 
 **Request (200 - ANALISE_CREDITO_PESSOAL):**
 
 ```json
 {
-  "idGrupoConsistencia": 200,
+  "idGrupoValidacao": 200,
   "correlationId": "6e0a23e0-5b9a-43e1-bc44-b1ad7dfe11d22",
   "parametros": [
     { "nome": "cod_cli", "valor": 1 },
@@ -138,16 +138,16 @@ Executa um grupo de consistencias.
 ```json
 {
   "idGrupoSolicitacao": 90001,
-  "idGrupoConsistencia": 200,
-  "nomeGrupoConsistencia": "ANALISE_CREDITO_PESSOAL",
+  "idGrupoValidacao": 200,
+  "nomeGrupoValidacao": "ANALISE_CREDITO_PESSOAL",
   "estadoGrupo": "FINALIZADO_SUCESSO",
   "resultadoNegocioGrupo": "APROVADO",
-  "mensagemGrupoConsistencia": "Grupo de consistencias executado com sucesso",
+  "mensagemGrupoValidacao": "Grupo de validacoes executado com sucesso",
   "correlationId": "6e0a23e0-5b9a-43e1-bc44-b1ad7dfe11d22",
-  "consistencias": [
+  "validacoes": [
     {
-      "idConsistencia": 201,
-      "nomeConsistencia": "calcular_score_interno",
+      "idValidacao": 201,
+      "nomeValidacao": "calcular_score_interno",
       "procedureRef": "PK_SCORE.CALCULAR_SCORE_INTERNO",
       "tipo": "LEITURA",
       "estadoTecnico": "SUCESSO",
@@ -164,8 +164,8 @@ Executa um grupo de consistencias.
 
 ```json
 {
-  "idGrupoConsistencia": 200,
-  "nomeGrupoConsistencia": "ANALISE_CREDITO_PESSOAL",
+  "idGrupoValidacao": 200,
+  "nomeGrupoValidacao": "ANALISE_CREDITO_PESSOAL",
   "estadoGrupo": "FALHA_VALIDACAO",
   "mensagem": "Parametros de entrada invalidos",
   "correlationId": "abc-123",
@@ -188,10 +188,10 @@ Retorna alertas de seguranca (falhas de autorizacao > 20% nos ultimos 7 dias).
 ### Grupo 200 - Sucesso
 
 ```bash
-curl -X POST http://localhost:8080/api/grupos-consistencia/executar \
+curl -X POST http://localhost:8080/api/nucleo-validacao/executar \
   -H "Content-Type: application/json" \
   -d '{
-    "idGrupoConsistencia": 200,
+    "idGrupoValidacao": 200,
     "correlationId": "test-200",
     "parametros": [
       {"nome": "cod_cli", "valor": 1},
@@ -204,10 +204,10 @@ curl -X POST http://localhost:8080/api/grupos-consistencia/executar \
 ### Grupo 100 - Abertura de Conta
 
 ```bash
-curl -X POST http://localhost:8080/api/grupos-consistencia/executar \
+curl -X POST http://localhost:8080/api/nucleo-validacao/executar \
   -H "Content-Type: application/json" \
   -d '{
-    "idGrupoConsistencia": 100,
+    "idGrupoValidacao": 100,
     "correlationId": "test-100",
     "parametros": [
       {"nome": "cpf_cnpj", "valor": "11111111111"},
@@ -220,10 +220,10 @@ curl -X POST http://localhost:8080/api/grupos-consistencia/executar \
 ### Grupo 300 - PIX
 
 ```bash
-curl -X POST http://localhost:8080/api/grupos-consistencia/executar \
+curl -X POST http://localhost:8080/api/nucleo-validacao/executar \
   -H "Content-Type: application/json" \
   -d '{
-    "idGrupoConsistencia": 300,
+    "idGrupoValidacao": 300,
     "correlationId": "test-300",
     "parametros": [
       {"nome": "agencia", "valor": "0001"},
@@ -250,8 +250,8 @@ O usuario `APP_RESTRICTED` nao tem grants, entao qualquer execucao de procedured
 Conecte-se ao banco e consulte as tabelas de auditoria:
 
 ```sql
-SELECT * FROM RASTRO_GRUPO ORDER BY DATA_INICIO DESC;
-SELECT * FROM RASTRO_CONSISTENCIA ORDER BY DATA_EXECUCAO DESC;
+SELECT * FROM RASTRO_VALIDACAO ORDER BY DATA_INICIO DESC;
+SELECT * FROM RASTRO_EXECUCAO ORDER BY DATA_EXECUCAO DESC;
 ```
 
 ## Testes
@@ -268,19 +268,19 @@ mvn test -Dtest=ParametroValidatorTest
 
 ```mermaid
 flowchart TD
-    A[Aplicacao Consumidora] --> B[POST /api/grupos-consistencia/executar]
-    B --> C[GrupoConsistenciaController]
-    C --> D[GrupoConsistenciaGateway]
+    A[Aplicacao Consumidora] --> B[POST /api/nucleo-validacao/executar]
+    B --> C[NucleoValidacaoController]
+    C --> D[NucleoValidacaoGateway]
     D --> E[Yaml Loader / Configuracao dos Grupos]
     D --> F[ParametroValidator]
     D --> G[TrackingRepository - REQUIRES_NEW]
     D --> H[ProcedureExecutor]
     H --> I[(Oracle Database)]
     I --> J[Packages PL/SQL]
-    J --> K[Procedures / Consistencias]
-    H --> L[ConsistenciaResultadoDTO]
-    D --> M[ResultadoGrupoConsolidador]
-    M --> N[GrupoConsistenciaResponseDTO]
+    J --> K[Procedures / Validacoes]
+    H --> L[ValidacaoResultadoDTO]
+    D --> M[ResultadoValidacaoConsolidador]
+    M --> N[ValidacaoResponseDTO]
 ```
 
 ## Comportamento Esperado
@@ -289,9 +289,9 @@ flowchart TD
 2. A regra principal esta simulada em PL/SQL
 3. Java atua como gateway generico
 4. O consumidor nao sabe quais procedures serao chamadas
-5. O consumidor envia apenas idGrupoConsistencia + parametros
-6. A configuracao define quais consistencias pertencem ao grupo
-7. Cada consistencia mapeia parametros logicos para parametros reais da procedure
+5. O consumidor envia apenas idGrupoValidacao + parametros
+6. A configuracao define quais validacoes pertencem ao grupo
+7. Cada validacao mapeia parametros logicos para parametros reais da procedure
 8. A auditoria e independente da transacao de negocio
 9. Falhas tecnicas nao sao confundidas com reproducao de negocio
 10. O retorno final e consolidado

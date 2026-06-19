@@ -1,4 +1,4 @@
-# Data Model — grupo-consistencias
+# Data Model — nucleo-validacao
 
 > Documento vivo do modelo de dados. Atualizado sempre que uma entidade for criada, alterada ou removida.
 > **Ultima atualizacao:** 2026-06-03
@@ -35,7 +35,7 @@ erDiagram
     CLIENTES ||--o{ PROPOSTAS_CREDITO : "solicita"
     CONTAS ||--o{ OPERACOES_PIX : "origina"
 
-    RASTRO_GRUPO ||--o{ RASTRO_CONSISTENCIA : "contem"
+    RASTRO_VALIDACAO ||--o{ RASTRO_EXECUCAO : "contem"
 ```
 
 ---
@@ -192,11 +192,11 @@ erDiagram
 
 ---
 
-### RASTRO_GRUPO
+### RASTRO_VALIDACAO
 
-> Auditoria da execucao de cada grupo de consistencias.
+> Auditoria da execucao de cada grupo de validacoes.
 
-**Tabela:** `RASTRO_GRUPO`
+**Tabela:** `RASTRO_VALIDACAO`
 **Schema:** `BANK_CORE`
 
 | Campo | Tipo SQL | Nullable | Default | Descricao |
@@ -213,27 +213,27 @@ erDiagram
 | `CORRELATION_ID` | VARCHAR2(100) | Sim | NULL | ID de correlacao |
 
 **Indices:**
-- `IDX_RASTRO_GRUPO_ESTADO` em `ESTADO`
-- `IDX_RASTRO_GRUPO_DATA` em `DATA_INICIO`
+- `IDX_RASTRO_VALIDACAO_ESTADO` em `ESTADO`
+- `IDX_RASTRO_VALIDACAO_DATA` em `DATA_INICIO`
 
 **Relacionamentos:**
-- Um `RASTRO_GRUPO` contem muitos `RASTRO_CONSISTENCIA` via `RASTRO_CONSISTENCIA.ID_GRUPO_SOLICITACAO`
+- Um `RASTRO_VALIDACAO` contem muitos `RASTRO_EXECUCAO` via `RASTRO_EXECUCAO.ID_GRUPO_SOLICITACAO`
 
 ---
 
-### RASTRO_CONSISTENCIA
+### RASTRO_EXECUCAO
 
-> Auditoria da execucao de cada consistencia individual.
+> Auditoria da execucao de cada validacao individual.
 
-**Tabela:** `RASTRO_CONSISTENCIA`
+**Tabela:** `RASTRO_EXECUCAO`
 **Schema:** `BANK_CORE`
 
 | Campo | Tipo SQL | Nullable | Default | Descricao |
 |-------|----------|----------|---------|-----------|
 | `ID_LOG` | NUMBER | Nao | IDENTITY | ID do log (PK) |
-| `ID_GRUPO_SOLICITACAO` | NUMBER | Nao | — | FK para RASTRO_GRUPO |
-| `ID_CONSISTENCIA_DEF` | NUMBER | Nao | — | ID da consistencia no YAML |
-| `NOME_CONSISTENCIA` | VARCHAR2(150) | Nao | — | Nome da consistencia |
+| `ID_GRUPO_SOLICITACAO` | NUMBER | Nao | — | FK para RASTRO_VALIDACAO |
+| `ID_CONSISTENCIA_DEF` | NUMBER | Nao | — | ID da validacao no YAML |
+| `NOME_CONSISTENCIA` | VARCHAR2(150) | Nao | — | Nome da validacao |
 | `PROCEDURE_REF` | VARCHAR2(200) | Nao | — | Referencia da procedure |
 | `ESTADO_TECNICO` | VARCHAR2(40) | Nao | — | Estado tecnico (SUCESSO, FALHA_EXECUCAO, etc.) |
 | `RESULTADO_NEGOCIO` | VARCHAR2(40) | Sim | NULL | Resultado de negocio |
@@ -246,11 +246,11 @@ erDiagram
 | `DATA_EXECUCAO` | TIMESTAMP | Sim | SYSTIMESTAMP | Data da execucao |
 
 **Constraints:**
-- `FOREIGN KEY (ID_GRUPO_SOLICITACAO) REFERENCES RASTRO_GRUPO(ID_GRUPO_SOLICITACAO) ON DELETE CASCADE`
+- `FOREIGN KEY (ID_GRUPO_SOLICITACAO) REFERENCES RASTRO_VALIDACAO(ID_GRUPO_SOLICITACAO) ON DELETE CASCADE`
 
 **Indices:**
-- `IDX_RASTRO_CONSISTENCIA_GRUPO` em `ID_GRUPO_SOLICITACAO`
-- `IDX_RASTRO_CONSISTENCIA_ESTADO` em `ESTADO_TECNICO`
+- `IDX_RASTRO_EXECUCAO_GRUPO` em `ID_GRUPO_SOLICITACAO`
+- `IDX_RASTRO_EXECUCAO_ESTADO` em `ESTADO_TECNICO`
 
 ---
 
@@ -258,15 +258,15 @@ erDiagram
 
 ### EstadoGrupo
 
-Usado em: `RASTRO_GRUPO.ESTADO`, `GrupoConsistenciaResponseDTO.estadoGrupo`
+Usado em: `RASTRO_VALIDACAO.ESTADO`, `GrupoConsistenciaResponseDTO.estadoGrupo`
 
 | Valor | Significado |
 |-------|-------------|
 | `CRIADO` | Grupo registrado, inicio da execucao |
 | `VALIDANDO` | Parametros sendo validados |
 | `EXECUTANDO` | Consistencias em execucao |
-| `FINALIZADO_SUCESSO` | Todas as consistencias executadas |
-| `FINALIZADO_PARCIAL` | Algumas consistencias falharam tecnicamente |
+| `FINALIZADO_SUCESSO` | Todas as validacoes executadas |
+| `FINALIZADO_PARCIAL` | Algumas validacoes falharam tecnicamente |
 | `FALHA_VALIDACAO` | Parametros de entrada invalidos |
 | `FALHA_CRITICA` | Erro interno da aplicacao |
 | `FALHA_AUTORIZACAO` | Erro de permissao no banco |
@@ -274,7 +274,7 @@ Usado em: `RASTRO_GRUPO.ESTADO`, `GrupoConsistenciaResponseDTO.estadoGrupo`
 
 ### EstadoConsistencia
 
-Usado em: `RASTRO_CONSISTENCIA.ESTADO_TECNICO`, `ConsistenciaResultadoDTO.estadoTecnico`
+Usado em: `RASTRO_EXECUCAO.ESTADO_TECNICO`, `ConsistenciaResultadoDTO.estadoTecnico`
 
 | Valor | Significado |
 |-------|-------------|
@@ -288,7 +288,7 @@ Usado em: `RASTRO_CONSISTENCIA.ESTADO_TECNICO`, `ConsistenciaResultadoDTO.estado
 
 ### ResultadoNegocio
 
-Usado em: `RASTRO_CONSISTENCIA.RESULTADO_NEGOCIO`, `ConsistenciaResultadoDTO.resultadoNegocio`, `GrupoConsistenciaResponseDTO.resultadoNegocioGrupo`
+Usado em: `RASTRO_EXECUCAO.RESULTADO_NEGOCIO`, `ConsistenciaResultadoDTO.resultadoNegocio`, `GrupoConsistenciaResponseDTO.resultadoNegocioGrupo`
 
 | Valor | Significado |
 |-------|-------------|

@@ -1,17 +1,17 @@
 spring:
   application:
-    name: grupo-consistencias
+    name: nucleo-validacao
 
   datasource:
     url: jdbc:oracle:thin:@localhost:1521/FREEPDB1
-    username: APP_CONSISTENCIA
+    username: APP_VALIDACAO
     password: app123
     driver-class-name: oracle.jdbc.OracleDriver
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
       connection-timeout: 30000
-      pool-name: GrupoConsistenciaPool
+      pool-name: NucleoValidacaoPool
 
   jpa:
     hibernate:
@@ -33,7 +33,7 @@ server:
 
 logging:
   level:
-    com.empresa.grupoconsistencias: DEBUG
+    com.empresa.nucleovalidacao: DEBUG
     org.springframework.jdbc: DEBUG
     org.springframework.transaction: DEBUG
 
@@ -45,7 +45,7 @@ spring:
 
   datasource:
     url: jdbc:oracle:thin:@localhost:1521/FREEPDB1
-    username: APP_CONSISTENCIA
+    username: APP_VALIDACAO
     password: app123
 
 ---
