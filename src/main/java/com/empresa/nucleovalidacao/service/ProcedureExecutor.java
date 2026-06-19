@@ -57,8 +57,8 @@ public class ProcedureExecutor {
                     int outMensagem = idx++;
                     int outPayload = idx++;
 
-                    cs.registerOutParameter(outResultado, Types.VARCHAR);
-                    cs.registerOutParameter(outMensagem, Types.VARCHAR);
+                    cs.registerOutParameter(outResultado, Types.VARCHAR, 50);
+                    cs.registerOutParameter(outMensagem, Types.VARCHAR, 4000);
                     cs.registerOutParameter(outPayload, Types.CLOB);
 
                     if (validacao.timeoutMs() != null && validacao.timeoutMs() > 0) {
