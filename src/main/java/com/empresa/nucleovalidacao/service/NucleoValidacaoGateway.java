@@ -19,7 +19,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
 public class NucleoValidacaoGateway {
@@ -47,8 +46,7 @@ public class NucleoValidacaoGateway {
         this.dataSource = dataSource;
     }
 
-    public ValidacaoResponseDTO executar(ValidacaoRequest request) {
-        var correlationId = request.correlationId() != null ? request.correlationId() : UUID.randomUUID().toString();
+    public ValidacaoResponseDTO executar(ValidacaoRequest request, String correlationId) {
         var parametros = ParametrosMapper.toMap(request.parametros());
         var idGrupo = request.idGrupoValidacao();
 
@@ -60,7 +58,7 @@ public class NucleoValidacaoGateway {
 
         if (!Boolean.TRUE.equals(grupo.ativo())) {
             var erro = new ErroValidacaoDTO("idGrupoValidacao",
-                    "Grupo de consistencia inativo", idGrupo);
+                    "Grupo de validacao inativo", idGrupo);
             throw new ValidacaoException(List.of(erro));
         }
 

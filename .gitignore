@@ -8,3 +8,20 @@ target/
 .settings/
 .project
 .classpath
+
+# macOS
+.DS_Store
+._*
+
+# vim
+*.swp
+*.swo
+*.swn
+
+# Maven shade
+dependency-reduced-pom.xml
+
+# Arquivos temporarios
+*.bak
+*.tmp
+*~

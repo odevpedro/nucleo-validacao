@@ -20,10 +20,12 @@ class NucleoValidacaoGatewayTest {
     @Autowired
     private NucleoValidacaoGateway gateway;
 
+    private static final String CORRELATION_ID = "test-correlation";
+
     @Test
     void sucessoTotal_grupo200() {
         var request = new ValidacaoRequest(
-                200, "test-correlation-1",
+                200,
                 List.of(
                         new ParametroEntradaDTO("cod_cli", 1),
                         new ParametroEntradaDTO("valor_solicitado", 10000.00),
@@ -31,27 +33,27 @@ class NucleoValidacaoGatewayTest {
                 )
         );
 
-        var response = gateway.executar(request);
+        var response = gateway.executar(request, CORRELATION_ID);
 
         assertThat(response.estadoGrupo()).isEqualTo("FINALIZADO_SUCESSO");
         assertThat(response.resultadoNegocioGrupo()).isEqualTo("APROVADO");
         assertThat(response.validacoes()).isNotEmpty();
         assertThat(response.validacoes()).allMatch(c -> "SUCESSO".equals(c.estadoTecnico()));
         assertThat(response.idGrupoSolicitacao()).isNotNull();
-        assertThat(response.correlationId()).isEqualTo("test-correlation-1");
+        assertThat(response.correlationId()).isEqualTo(CORRELATION_ID);
     }
 
     @Test
     void falhaValidacao_parametroAusente() {
         var request = new ValidacaoRequest(
-                200, "abc-123",
+                200,
                 List.of(
                         new ParametroEntradaDTO("cod_cli", 1),
                         new ParametroEntradaDTO("qtd_parcelas", 24)
                 )
         );
 
-        var exception = assertThrows(ValidacaoException.class, () -> gateway.executar(request));
+        var exception = assertThrows(ValidacaoException.class, () -> gateway.executar(request, CORRELATION_ID));
 
         assertThat(exception.getErros()).isNotEmpty();
         assertThat(exception.getErros()).anyMatch(e -> "valor_solicitado".equals(e.campo()));
@@ -60,7 +62,7 @@ class NucleoValidacaoGatewayTest {
     @Test
     void falhaValidacao_tipoInvalido() {
         var request = new ValidacaoRequest(
-                200, "abc-123",
+                200,
                 List.of(
                         new ParametroEntradaDTO("cod_cli", 1),
                         new ParametroEntradaDTO("valor_solicitado", 10000.00),
@@ -68,7 +70,7 @@ class NucleoValidacaoGatewayTest {
                 )
         );
 
-        var exception = assertThrows(ValidacaoException.class, () -> gateway.executar(request));
+        var exception = assertThrows(ValidacaoException.class, () -> gateway.executar(request, CORRELATION_ID));
 
         assertThat(exception.getErros()).isNotEmpty();
         assertThat(exception.getErros()).anyMatch(e -> "qtd_parcelas".equals(e.campo()));
@@ -77,7 +79,7 @@ class NucleoValidacaoGatewayTest {
     @Test
     void reproducaoNegocio_clienteBaixoScore() {
         var request = new ValidacaoRequest(
-                200, "test-reprovado",
+                200,
                 List.of(
                         new ParametroEntradaDTO("cod_cli", 2),
                         new ParametroEntradaDTO("valor_solicitado", 3000.00),
@@ -85,7 +87,7 @@ class NucleoValidacaoGatewayTest {
                 )
         );
 
-        var response = gateway.executar(request);
+        var response = gateway.executar(request, CORRELATION_ID);
 
         assertThat(response.estadoGrupo()).isEqualTo("FINALIZADO_SUCESSO");
         assertThat(response.resultadoNegocioGrupo()).isIn("REPROVADO", "ALERTA");
@@ -99,18 +101,18 @@ class NucleoValidacaoGatewayTest {
     @Test
     void grupoInexistente() {
         var request = new ValidacaoRequest(
-                9999, null,
+                9999,
                 List.of()
         );
 
-        var exception = assertThrows(Exception.class, () -> gateway.executar(request));
+        var exception = assertThrows(Exception.class, () -> gateway.executar(request, CORRELATION_ID));
         assertThat(exception.getMessage()).contains("não encontrado");
     }
 
     @Test
-    void correlationIdGeradoQuandoNulo() {
+    void correlationIdPassadoParaResponse() {
         var request = new ValidacaoRequest(
-                200, null,
+                200,
                 List.of(
                         new ParametroEntradaDTO("cod_cli", 1),
                         new ParametroEntradaDTO("valor_solicitado", 5000.00),
@@ -118,16 +120,15 @@ class NucleoValidacaoGatewayTest {
                 )
         );
 
-        var response = gateway.executar(request);
+        var response = gateway.executar(request, "meu-correlation-id");
 
-        assertThat(response.correlationId()).isNotNull();
-        assertThat(response.correlationId()).isNotEmpty();
+        assertThat(response.correlationId()).isEqualTo("meu-correlation-id");
     }
 
     @Test
     void validacaoValorMinimo() {
         var request = new ValidacaoRequest(
-                200, "test-min",
+                200,
                 List.of(
                         new ParametroEntradaDTO("cod_cli", 1),
                         new ParametroEntradaDTO("valor_solicitado", 50.00),
@@ -135,7 +136,7 @@ class NucleoValidacaoGatewayTest {
                 )
         );
 
-        var exception = assertThrows(ValidacaoException.class, () -> gateway.executar(request));
+        var exception = assertThrows(ValidacaoException.class, () -> gateway.executar(request, CORRELATION_ID));
         assertThat(exception.getErros()).isNotEmpty();
         assertThat(exception.getErros()).anyMatch(e -> "valor_solicitado".equals(e.campo()));
     }
@@ -143,7 +144,7 @@ class NucleoValidacaoGatewayTest {
     @Test
     void sucesso_grupo300() {
         var request = new ValidacaoRequest(
-                300, "test-pix",
+                300,
                 List.of(
                         new ParametroEntradaDTO("agencia", "0001"),
                         new ParametroEntradaDTO("conta", "10000-0"),
@@ -153,7 +154,7 @@ class NucleoValidacaoGatewayTest {
                 )
         );
 
-        var response = gateway.executar(request);
+        var response = gateway.executar(request, CORRELATION_ID);
 
         assertThat(response.estadoGrupo()).isEqualTo("FINALIZADO_SUCESSO");
         assertThat(response.resultadoNegocioGrupo()).isEqualTo("APROVADO");
@@ -163,7 +164,7 @@ class NucleoValidacaoGatewayTest {
     @Test
     void sucesso_grupo100() {
         var request = new ValidacaoRequest(
-                100, "test-onboard",
+                100,
                 List.of(
                         new ParametroEntradaDTO("cpf_cnpj", "11111111111"),
                         new ParametroEntradaDTO("canal_origem", "APP"),
@@ -171,7 +172,7 @@ class NucleoValidacaoGatewayTest {
                 )
         );
 
-        var response = gateway.executar(request);
+        var response = gateway.executar(request, CORRELATION_ID);
 
         assertThat(response.estadoGrupo()).isIn("FINALIZADO_SUCESSO", "FINALIZADO_PARCIAL");
         assertThat(response.idGrupoValidacao()).isEqualTo(100);
@@ -180,7 +181,7 @@ class NucleoValidacaoGatewayTest {
     @Test
     void paramValorExcedeMaximo() {
         var request = new ValidacaoRequest(
-                200, "test-max",
+                200,
                 List.of(
                         new ParametroEntradaDTO("cod_cli", 1),
                         new ParametroEntradaDTO("valor_solicitado", 100000.00),
@@ -188,14 +189,14 @@ class NucleoValidacaoGatewayTest {
                 )
         );
 
-        var exception = assertThrows(ValidacaoException.class, () -> gateway.executar(request));
+        var exception = assertThrows(ValidacaoException.class, () -> gateway.executar(request, CORRELATION_ID));
         assertThat(exception.getErros()).anyMatch(e -> "valor_solicitado".equals(e.campo()));
     }
 
     @Test
     void rastroPersisteAposFalha() {
         var request = new ValidacaoRequest(
-                200, "test-rastro",
+                200,
                 List.of(
                         new ParametroEntradaDTO("cod_cli", 1),
                         new ParametroEntradaDTO("valor_solicitado", 10000.00),
@@ -203,7 +204,7 @@ class NucleoValidacaoGatewayTest {
                 )
         );
 
-        var response = gateway.executar(request);
+        var response = gateway.executar(request, CORRELATION_ID);
 
         assertThat(response.idGrupoSolicitacao()).isNotNull();
         assertThat(response.idGrupoSolicitacao()).isPositive();

@@ -18,7 +18,7 @@ validacao:
         tipo: STRING
         obrigatorio: false
         descricao: "Hash da biometria facial"
-    consistencias:
+    validacoes:
       - id: 101
         nome: "validar_documento_receita"
         descricao: "Valida documento na Receita Federal"
@@ -100,7 +100,7 @@ validacao:
         validacao:
           min: 1
           max: 96
-    consistencias:
+    validacoes:
       - id: 201
         nome: "calcular_score_interno"
         descricao: "Algoritmo proprietario baseado em historico e bureau"
@@ -193,7 +193,7 @@ validacao:
         tipo: STRING
         obrigatorio: true
         descricao: "ID unico da solicitacao"
-    consistencias:
+    validacoes:
       - id: 301
         nome: "validar_chave_pix"
         descricao: "Valida chave PIX de destino"
@@ -296,7 +296,7 @@ validacao:
         tipo: STRING
         obrigatorio: false
         descricao: "Nosso numero do titulo"
-    consistencias:
+    validacoes:
       - id: 401
         nome: "validar_convenio_cedente"
         descricao: "Valida convenio do cedente"
@@ -380,7 +380,7 @@ validacao:
         tipo: BIGDECIMAL
         obrigatorio: false
         descricao: "Limite de credito desejado"
-    consistencias:
+    validacoes:
       - id: 501
         nome: "validar_solicitacao_cartao"
         descricao: "Valida solicitacao de cartao"
@@ -456,7 +456,7 @@ validacao:
         tipo: STRING
         obrigatorio: true
         descricao: "Motivo da analise de compliance"
-    consistencias:
+    validacoes:
       - id: 601
         nome: "monitorar_transacoes_suspeitas"
         descricao: "Monitora transacoes suspeitas"
@@ -535,7 +535,7 @@ validacao:
         tipo: BIGDECIMAL
         obrigatorio: false
         descricao: "Percentual de desconto para renegociacao"
-    consistencias:
+    validacoes:
       - id: 701
         nome: "identificar_vencimento_atraso"
         descricao: "Identifica vencimento em atraso"
@@ -616,7 +616,7 @@ validacao:
         validacao:
           min: 100.00
           max: 999999.99
-    consistencias:
+    validacoes:
       - id: 801
         nome: "validar_perfil_investidor"
         descricao: "Valida perfil do investidor"
@@ -699,7 +699,7 @@ validacao:
         tipo: BIGDECIMAL
         obrigatorio: true
         descricao: "Renda comprovada do cliente"
-    consistencias:
+    validacoes:
       - id: 901
         nome: "avaliar_bem_garantia"
         descricao: "Avalia bem em garantia"
@@ -771,7 +771,7 @@ validacao:
         tipo: STRING
         obrigatorio: false
         descricao: "Codigo da agencia"
-    consistencias:
+    validacoes:
       - id: 1001
         nome: "validar_saldos_caixa_terminais"
         descricao: "Valida saldos de caixa dos terminais"

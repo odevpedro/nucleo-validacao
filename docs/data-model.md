@@ -232,8 +232,8 @@ erDiagram
 |-------|----------|----------|---------|-----------|
 | `ID_LOG` | NUMBER | Nao | IDENTITY | ID do log (PK) |
 | `ID_GRUPO_SOLICITACAO` | NUMBER | Nao | — | FK para RASTRO_VALIDACAO |
-| `ID_CONSISTENCIA_DEF` | NUMBER | Nao | — | ID da validacao no YAML |
-| `NOME_CONSISTENCIA` | VARCHAR2(150) | Nao | — | Nome da validacao |
+| `ID_EXECUCAO_DEF` | NUMBER | Nao | — | ID da validacao no YAML |
+| `NOME_EXECUCAO` | VARCHAR2(150) | Nao | — | Nome da validacao |
 | `PROCEDURE_REF` | VARCHAR2(200) | Nao | — | Referencia da procedure |
 | `ESTADO_TECNICO` | VARCHAR2(40) | Nao | — | Estado tecnico (SUCESSO, FALHA_EXECUCAO, etc.) |
 | `RESULTADO_NEGOCIO` | VARCHAR2(40) | Sim | NULL | Resultado de negocio |
@@ -258,13 +258,13 @@ erDiagram
 
 ### EstadoGrupo
 
-Usado em: `RASTRO_VALIDACAO.ESTADO`, `GrupoConsistenciaResponseDTO.estadoGrupo`
+Usado em: `RASTRO_VALIDACAO.ESTADO`, `ValidacaoResponseDTO.estadoGrupo`
 
 | Valor | Significado |
 |-------|-------------|
 | `CRIADO` | Grupo registrado, inicio da execucao |
 | `VALIDANDO` | Parametros sendo validados |
-| `EXECUTANDO` | Consistencias em execucao |
+| `EXECUTANDO` | Validacoes em execucao |
 | `FINALIZADO_SUCESSO` | Todas as validacoes executadas |
 | `FINALIZADO_PARCIAL` | Algumas validacoes falharam tecnicamente |
 | `FALHA_VALIDACAO` | Parametros de entrada invalidos |
@@ -272,9 +272,9 @@ Usado em: `RASTRO_VALIDACAO.ESTADO`, `GrupoConsistenciaResponseDTO.estadoGrupo`
 | `FALHA_AUTORIZACAO` | Erro de permissao no banco |
 | `CANCELADO` | Grupo cancelado |
 
-### EstadoConsistencia
+### EstadoExecucao
 
-Usado em: `RASTRO_EXECUCAO.ESTADO_TECNICO`, `ConsistenciaResultadoDTO.estadoTecnico`
+Usado em: `RASTRO_EXECUCAO.ESTADO_TECNICO`, `ValidacaoResultadoDTO.estadoTecnico`
 
 | Valor | Significado |
 |-------|-------------|
@@ -288,7 +288,7 @@ Usado em: `RASTRO_EXECUCAO.ESTADO_TECNICO`, `ConsistenciaResultadoDTO.estadoTecn
 
 ### ResultadoNegocio
 
-Usado em: `RASTRO_EXECUCAO.RESULTADO_NEGOCIO`, `ConsistenciaResultadoDTO.resultadoNegocio`, `GrupoConsistenciaResponseDTO.resultadoNegocioGrupo`
+Usado em: `RASTRO_EXECUCAO.RESULTADO_NEGOCIO`, `ValidacaoResultadoDTO.resultadoNegocio`, `ValidacaoResponseDTO.resultadoNegocioGrupo`
 
 | Valor | Significado |
 |-------|-------------|
@@ -297,9 +297,9 @@ Usado em: `RASTRO_EXECUCAO.RESULTADO_NEGOCIO`, `ConsistenciaResultadoDTO.resulta
 | `ALERTA` | Alerta gerado pela regra |
 | `INCONCLUSIVO` | Resultado inconclusivo (falha tecnica) |
 
-### TipoConsistencia
+### TipoValidacao
 
-Usado em: `ConsistenciaDefinicaoDTO.tipo`, `ConsistenciaResultadoDTO.tipo`
+Usado em: `ValidacaoDefinicaoDTO.tipo`, `ValidacaoResultadoDTO.tipo`
 
 | Valor | Significado |
 |-------|-------------|

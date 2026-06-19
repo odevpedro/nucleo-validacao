@@ -8,7 +8,7 @@
 	"item": [
 		{
 			"name": "Grupo 100 - ABERTURA_CONTA_CORRENTE",
-			"description": "Onboarding digital de PF/PJ. Consistencias: validar_documento_receita, verificar_listas_restritivas, validar_biometria_face, consultar_restricoes_financeiras, criar_conta_core_bancario.",
+			"description": "Onboarding digital de PF/PJ. Validacoes: validar_documento_receita, verificar_listas_restritivas, validar_biometria_face, consultar_restricoes_financeiras, criar_conta_core_bancario.",
 			"item": [
 				{
 					"name": "Sucesso - Cliente 5 (CPF valido)",
@@ -21,7 +21,7 @@
 									"pm.test(\"Estado FINALIZADO_SUCESSO\", () => {",
 									"    const json = pm.response.json();",
 									"    pm.expect(json.estadoGrupo).to.be.oneOf(['FINALIZADO_SUCESSO', 'FINALIZADO_PARCIAL']);",
-									"    pm.expect(json.idGrupoConsistencia).to.eql(100);",
+									"    pm.expect(json.idGrupoValidacao).to.eql(100);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -35,14 +35,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 100,\n  \"correlationId\": \"onboard-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"cpf_cnpj\",\n      \"valor\": \"11111111111\"\n    },\n    {\n      \"nome\": \"canal_origem\",\n      \"valor\": \"APP\"\n    },\n    {\n      \"nome\": \"biometria_hash\",\n      \"valor\": \"hash1234567890abcdef\"\n    }\n  ]\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 100,\n  \"parametros\": [\n    {\n      \"nome\": \"cpf_cnpj\",\n      \"valor\": \"11111111111\"\n    },\n    {\n      \"nome\": \"canal_origem\",\n      \"valor\": \"APP\"\n    },\n    {\n      \"nome\": \"biometria_hash\",\n      \"valor\": \"hash1234567890abcdef\"\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				},
@@ -55,14 +55,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 100,\n  \"correlationId\": \"onboard-fail\",\n  \"parametros\": [\n    {\n      \"nome\": \"cpf_cnpj\",\n      \"valor\": \"123\"\n    },\n    {\n      \"nome\": \"canal_origem\",\n      \"valor\": \"APP\"\n    }\n  ]\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 100,\n  \"parametros\": [\n    {\n      \"nome\": \"cpf_cnpj\",\n      \"valor\": \"123\"\n    },\n    {\n      \"nome\": \"canal_origem\",\n      \"valor\": \"APP\"\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				}
@@ -70,7 +70,7 @@
 		},
 		{
 			"name": "Grupo 200 - ANALISE_CREDITO_PESSOAL",
-			"description": "Emprestimo pessoal, cheque especial. Consistencias: calcular_score_interno, consultar_scr_bacen, validar_renda_comprovada, analisar_capacidade_pagamento, gerar_proposta_comercial.",
+			"description": "Emprestimo pessoal, cheque especial. Validacoes: calcular_score_interno, consultar_scr_bacen, validar_renda_comprovada, analisar_capacidade_pagamento, gerar_proposta_comercial.",
 			"item": [
 				{
 					"name": "Sucesso - Cliente 1 (score alto)",
@@ -97,14 +97,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 200,\n  \"correlationId\": \"credito-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"cod_cli\",\n      \"valor\": 1\n    },\n    {\n      \"nome\": \"valor_solicitado\",\n      \"valor\": 10000.00\n    },\n    {\n      \"nome\": \"qtd_parcelas\",\n      \"valor\": 24\n    }\n  ]\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 200,\n  \"parametros\": [\n    {\n      \"nome\": \"cod_cli\",\n      \"valor\": 1\n    },\n    {\n      \"nome\": \"valor_solicitado\",\n      \"valor\": 10000.00\n    },\n    {\n      \"nome\": \"qtd_parcelas\",\n      \"valor\": 24\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				},
@@ -132,14 +132,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 200,\n  \"correlationId\": \"credito-reprovado\",\n  \"parametros\": [\n    {\n      \"nome\": \"cod_cli\",\n      \"valor\": 2\n    },\n    {\n      \"nome\": \"valor_solicitado\",\n      \"valor\": 3000.00\n    },\n    {\n      \"nome\": \"qtd_parcelas\",\n      \"valor\": 12\n    }\n  ]\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 200,\n  \"parametros\": [\n    {\n      \"nome\": \"cod_cli\",\n      \"valor\": 2\n    },\n    {\n      \"nome\": \"valor_solicitado\",\n      \"valor\": 3000.00\n    },\n    {\n      \"nome\": \"qtd_parcelas\",\n      \"valor\": 12\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				},
@@ -152,14 +152,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 200,\n  \"correlationId\": \"credito-min\",\n  \"parametros\": [\n    {\n      \"nome\": \"cod_cli\",\n      \"valor\": 1\n    },\n    {\n      \"nome\": \"valor_solicitado\",\n      \"valor\": 50.00\n    },\n    {\n      \"nome\": \"qtd_parcelas\",\n      \"valor\": 12\n    }\n  ]\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 200,\n  \"parametros\": [\n    {\n      \"nome\": \"cod_cli\",\n      \"valor\": 1\n    },\n    {\n      \"nome\": \"valor_solicitado\",\n      \"valor\": 50.00\n    },\n    {\n      \"nome\": \"qtd_parcelas\",\n      \"valor\": 12\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				},
@@ -172,14 +172,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 200,\n  \"correlationId\": \"credito-ausente\",\n  \"parametros\": [\n    {\n      \"nome\": \"cod_cli\",\n      \"valor\": 1\n    },\n    {\n      \"nome\": \"qtd_parcelas\",\n      \"valor\": 24\n    }\n  ]\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 200,\n  \"parametros\": [\n    {\n      \"nome\": \"cod_cli\",\n      \"valor\": 1\n    },\n    {\n      \"nome\": \"qtd_parcelas\",\n      \"valor\": 24\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				},
@@ -192,14 +192,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 200,\n  \"correlationId\": \"credito-tipo\",\n  \"parametros\": [\n    {\n      \"nome\": \"cod_cli\",\n      \"valor\": 1\n    },\n    {\n      \"nome\": \"valor_solicitado\",\n      \"valor\": 10000.00\n    },\n    {\n      \"nome\": \"qtd_parcelas\",\n      \"valor\": \"vinte e quatro\"\n    }\n  ]\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 200,\n  \"parametros\": [\n    {\n      \"nome\": \"cod_cli\",\n      \"valor\": 1\n    },\n    {\n      \"nome\": \"valor_solicitado\",\n      \"valor\": 10000.00\n    },\n    {\n      \"nome\": \"qtd_parcelas\",\n      \"valor\": \"vinte e quatro\"\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				}
@@ -207,7 +207,7 @@
 		},
 		{
 			"name": "Grupo 300 - OPERACOES_PIX",
-			"description": "Transferencias instantaneas. Consistencias: validar_chave_pix, verificar_saldo_disponivel, checar_limites_operacionais, analisar_padrao_fraude, executar_debito_credito_core.",
+			"description": "Transferencias instantaneas. Validacoes: validar_chave_pix, verificar_saldo_disponivel, checar_limites_operacionais, analisar_padrao_fraude, executar_debito_credito_core.",
 			"item": [
 				{
 					"name": "Sucesso - PIX entre contas",
@@ -234,14 +234,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 300,\n  \"correlationId\": \"pix-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"agencia\",\n      \"valor\": \"0001\"\n    },\n    {\n      \"nome\": \"conta\",\n      \"valor\": \"10000-0\"\n    },\n    {\n      \"nome\": \"chave_destino\",\n      \"valor\": \"22222222222\"\n    },\n    {\n      \"nome\": \"valor\",\n      \"valor\": 100.00\n    },\n    {\n      \"nome\": \"id_solicitacao\",\n      \"valor\": \"PIX-TEST-001\"\n    }\n  ]\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 300,\n  \"parametros\": [\n    {\n      \"nome\": \"agencia\",\n      \"valor\": \"0001\"\n    },\n    {\n      \"nome\": \"conta\",\n      \"valor\": \"10000-0\"\n    },\n    {\n      \"nome\": \"chave_destino\",\n      \"valor\": \"22222222222\"\n    },\n    {\n      \"nome\": \"valor\",\n      \"valor\": 100.00\n    },\n    {\n      \"nome\": \"id_solicitacao\",\n      \"valor\": \"PIX-TEST-001\"\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				},
@@ -254,14 +254,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 300,\n  \"correlationId\": \"pix-saldo\",\n  \"parametros\": [\n    {\n      \"nome\": \"agencia\",\n      \"valor\": \"0001\"\n    },\n    {\n      \"nome\": \"conta\",\n      \"valor\": \"10002-2\"\n    },\n    {\n      \"nome\": \"chave_destino\",\n      \"valor\": \"cliente5@email.com\"\n    },\n    {\n      \"nome\": \"valor\",\n      \"valor\": 50000.00\n    },\n    {\n      \"nome\": \"id_solicitacao\",\n      \"valor\": \"PIX-TEST-FALHA-SALDO\"\n    }\n  ]\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 300,\n  \"correlationId\": \"pix-saldo\",\n  \"parametros\": [\n    {\n      \"nome\": \"agencia\",\n      \"valor\": \"0001\"\n    },\n    {\n      \"nome\": \"conta\",\n      \"valor\": \"10002-2\"\n    },\n    {\n      \"nome\": \"chave_destino\",\n      \"valor\": \"cliente5@email.com\"\n    },\n    {\n      \"nome\": \"valor\",\n      \"valor\": 50000.00\n    },\n    {\n      \"nome\": \"id_solicitacao\",\n      \"valor\": \"PIX-TEST-FALHA-SALDO\"\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				}
@@ -269,7 +269,7 @@
 		},
 		{
 			"name": "Grupo 400 - COBRANCA_BOLETOS",
-			"description": "Emissao e gestao de titulos. Consistencias: validar_convenio_cedente, calcular_encargos_legais, gerar_codigo_barras, registrar_titulo_cip, baixar_titulo_pagamento.",
+			"description": "Emissao e gestao de titulos. Validacoes: validar_convenio_cedente, calcular_encargos_legais, gerar_codigo_barras, registrar_titulo_cip, baixar_titulo_pagamento.",
 			"item": [
 				{
 					"name": "Sucesso - Emissao de boleto",
@@ -280,14 +280,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 400,\n  \"correlationId\": \"boleto-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"cpf_cnpj_pagador\",\n      \"valor\": \"11111111111\"\n    },\n    {\n      \"nome\": \"valor\",\n      \"valor\": 1500.00\n    },\n    {\n      \"nome\": \"data_vencimento\",\n      \"valor\": \"2026-07-01\"\n    },\n    {\n      \"nome\": \"nosso_numero\",\n      \"valor\": \"BOLETO-NOVO-001\"\n    }\n  ]\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 400,\n  \"correlationId\": \"boleto-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"cpf_cnpj_pagador\",\n      \"valor\": \"11111111111\"\n    },\n    {\n      \"nome\": \"valor\",\n      \"valor\": 1500.00\n    },\n    {\n      \"nome\": \"data_vencimento\",\n      \"valor\": \"2026-07-01\"\n    },\n    {\n      \"nome\": \"nosso_numero\",\n      \"valor\": \"BOLETO-NOVO-001\"\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				}
@@ -295,7 +295,7 @@
 		},
 		{
 			"name": "Grupo 500 - GESTAO_CARTAO_CREDITO",
-			"description": "Emissao, limite e ativacao. Consistencias: validar_solicitacao_cartao, definir_limite_credito, verificar_adesao_servicos, emitir_cartao_virtual_fisico, ativar_cartao_adquirente.",
+			"description": "Emissao, limite e ativacao. Validacoes: validar_solicitacao_cartao, definir_limite_credito, verificar_adesao_servicos, emitir_cartao_virtual_fisico, ativar_cartao_adquirente.",
 			"item": [
 				{
 					"name": "Sucesso - Emissao de cartao",
@@ -306,14 +306,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 500,\n  \"correlationId\": \"cartao-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"cod_cli\",\n      \"valor\": 1\n    },\n    {\n      \"nome\": \"produto_id\",\n      \"valor\": 101\n    },\n    {\n      \"nome\": \"limite_desejado\",\n      \"valor\": 10000.00\n    }\n  ]\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 500,\n  \"correlationId\": \"cartao-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"cod_cli\",\n      \"valor\": 1\n    },\n    {\n      \"nome\": \"produto_id\",\n      \"valor\": 101\n    },\n    {\n      \"nome\": \"limite_desejado\",\n      \"valor\": 10000.00\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				}
@@ -321,7 +321,7 @@
 		},
 		{
 			"name": "Grupo 600 - COMPLIANCE_KYC_AML",
-			"description": "Prevencao a lavagem e atualizacao cadastral. Consistencias: monitorar_transacoes_suspeitas, validar_origem_fundos, atualizar_cadastro_cliente, gerar_comunicado_coaf, bloquear_preventivo_conta.",
+			"description": "Prevencao a lavagem e atualizacao cadastral. Validacoes: monitorar_transacoes_suspeitas, validar_origem_fundos, atualizar_cadastro_cliente, gerar_comunicado_coaf, bloquear_preventivo_conta.",
 			"item": [
 				{
 					"name": "Sucesso - Analise compliance",
@@ -332,14 +332,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 600,\n  \"correlationId\": \"compliance-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"cod_cli\",\n      \"valor\": 1\n    },\n    {\n      \"nome\": \"motivo_analise\",\n      \"valor\": \"ATUALIZACAO_CADASTRAL_PERIODICA\"\n    }\n  ]\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 600,\n  \"correlationId\": \"compliance-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"cod_cli\",\n      \"valor\": 1\n    },\n    {\n      \"nome\": \"motivo_analise\",\n      \"valor\": \"ATUALIZACAO_CADASTRAL_PERIODICA\"\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				}
@@ -347,7 +347,7 @@
 		},
 		{
 			"name": "Grupo 700 - RECUPERACAO_CREDITO",
-			"description": "Inadimplencia e renegociacao. Consistencias: identificar_vencimento_atraso, calcular_atualizacao_monetaria, verificar_acordo_possivel, registrar_protesto_cartorio, atualizar_central_risco.",
+			"description": "Inadimplencia e renegociacao. Validacoes: identificar_vencimento_atraso, calcular_atualizacao_monetaria, verificar_acordo_possivel, registrar_protesto_cartorio, atualizar_central_risco.",
 			"item": [
 				{
 					"name": "Sucesso - Analise recuperacao",
@@ -358,14 +358,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 700,\n  \"correlationId\": \"recuperacao-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"contrato_id\",\n      \"valor\": 3\n    },\n    {\n      \"nome\": \"qtd_parcelas_ren\",\n      \"valor\": 36\n    },\n    {\n      \"nome\": \"percentual_desconto\",\n      \"valor\": 15.0\n    }\n  ]\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 700,\n  \"correlationId\": \"recuperacao-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"contrato_id\",\n      \"valor\": 3\n    },\n    {\n      \"nome\": \"qtd_parcelas_ren\",\n      \"valor\": 36\n    },\n    {\n      \"nome\": \"percentual_desconto\",\n      \"valor\": 15.0\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				}
@@ -373,7 +373,7 @@
 		},
 		{
 			"name": "Grupo 800 - INVESTIMENTOS_RENDA_FIXA",
-			"description": "CDB, LCI, LCA, Tesouro Direto. Consistencias: validar_perfil_investidor, consultar_disponibilidade_produtos, calcular_rentabilidade_liquida, registrar_operacao_b3_cetip, atualizar_posicao_cliente.",
+			"description": "CDB, LCI, LCA, Tesouro Direto. Validacoes: validar_perfil_investidor, consultar_disponibilidade_produtos, calcular_rentabilidade_liquida, registrar_operacao_b3_cetip, atualizar_posicao_cliente.",
 			"item": [
 				{
 					"name": "Sucesso - Aplicacao investimento",
@@ -384,14 +384,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 800,\n  \"correlationId\": \"invest-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"cod_cli\",\n      \"valor\": 1\n    },\n    {\n      \"nome\": \"produto_id\",\n      \"valor\": 501\n    },\n    {\n      \"nome\": \"valor_aplicacao\",\n      \"valor\": 5000.00\n    }\n  ]\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 800,\n  \"correlationId\": \"invest-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"cod_cli\",\n      \"valor\": 1\n    },\n    {\n      \"nome\": \"produto_id\",\n      \"valor\": 501\n    },\n    {\n      \"nome\": \"valor_aplicacao\",\n      \"valor\": 5000.00\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				}
@@ -399,7 +399,7 @@
 		},
 		{
 			"name": "Grupo 900 - FINANCIAMENTO_GARANTIA_REAL",
-			"description": "Imobiliario, veicular e rural. Consistencias: avaliar_bem_garantia, validar_escritura_registro, calcular_cet_taxa_efetiva, verificar_seguro_obrigatorio, registrar_alienacao_fiduciaria.",
+			"description": "Imobiliario, veicular e rural. Validacoes: avaliar_bem_garantia, validar_escritura_registro, calcular_cet_taxa_efetiva, verificar_seguro_obrigatorio, registrar_alienacao_fiduciaria.",
 			"item": [
 				{
 					"name": "Sucesso - Financiamento garantia",
@@ -410,14 +410,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 900,\n  \"correlationId\": \"garantia-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"garantia_id\",\n      \"valor\": 1001\n    },\n    {\n      \"nome\": \"valor_financiado\",\n      \"valor\": 150000.00\n    },\n    {\n      \"nome\": \"renda_comprovada\",\n      \"valor\": 15000.00\n    }\n  ]\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 900,\n  \"correlationId\": \"garantia-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"garantia_id\",\n      \"valor\": 1001\n    },\n    {\n      \"nome\": \"valor_financiado\",\n      \"valor\": 150000.00\n    },\n    {\n      \"nome\": \"renda_comprovada\",\n      \"valor\": 15000.00\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				}
@@ -425,7 +425,7 @@
 		},
 		{
 			"name": "Grupo 1000 - CONCILIACAO_FECHAMENTO",
-			"description": "Operacional/contabil diario. Consistencias: validar_saldos_caixa_terminais, conciliar_extratos_bancarios, verificar_lancamentos_pendentes, calcular_provisoes_reservas, fechar_contabilidade_dia.",
+			"description": "Operacional/contabil diario. Validacoes: validar_saldos_caixa_terminais, conciliar_extratos_bancarios, verificar_lancamentos_pendentes, calcular_provisoes_reservas, fechar_contabilidade_dia.",
 			"item": [
 				{
 					"name": "Sucesso - Fechamento diario",
@@ -436,14 +436,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 1000,\n  \"correlationId\": \"fechamento-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"data_processamento\",\n      \"valor\": \"2026-06-03\"\n    },\n    {\n      \"nome\": \"agencia_codigo\",\n      \"valor\": \"0001\"\n    }\n  ]\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 1000,\n  \"correlationId\": \"fechamento-001\",\n  \"parametros\": [\n    {\n      \"nome\": \"data_processamento\",\n      \"valor\": \"2026-06-03\"\n    },\n    {\n      \"nome\": \"agencia_codigo\",\n      \"valor\": \"0001\"\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				}
@@ -482,14 +482,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idGrupoConsistencia\": 9999,\n  \"correlationId\": \"inexistente\",\n  \"parametros\": []\n}"
+							"raw": "{\n  \"idGrupoValidacao\": 9999,\n  \"correlationId\": \"inexistente\",\n  \"parametros\": []\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				},
@@ -502,14 +502,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \"idGrupoConsistencia\": 200, parametros: [] }"
+							"raw": "{ \"idGrupoValidacao\": 200, parametros: [] }"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/grupos-validacao/executar",
+							"raw": "http://localhost:8080/api/nucleo-validacao/executar",
 							"protocol": "http",
 							"host": ["localhost"],
 							"port": "8080",
-							"path": ["api", "grupos-validacao", "executar"]
+							"path": ["api", "nucleo-validacao", "executar"]
 						}
 					}
 				}

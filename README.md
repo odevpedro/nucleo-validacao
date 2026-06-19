@@ -124,7 +124,6 @@ Executa um grupo de validacoes.
 ```json
 {
   "idGrupoValidacao": 200,
-  "correlationId": "6e0a23e0-5b9a-43e1-bc44-b1ad7dfe11d22",
   "parametros": [
     { "nome": "cod_cli", "valor": 1 },
     { "nome": "valor_solicitado", "valor": 10000.00 },
@@ -132,6 +131,8 @@ Executa um grupo de validacoes.
   ]
 }
 ```
+
+O `correlationId` e enviado via header `X-Correlation-Id`. Se ausente, um UUID e gerado automaticamente.
 
 **Response (200 - Sucesso):**
 
@@ -190,9 +191,9 @@ Retorna alertas de seguranca (falhas de autorizacao > 20% nos ultimos 7 dias).
 ```bash
 curl -X POST http://localhost:8080/api/nucleo-validacao/executar \
   -H "Content-Type: application/json" \
+  -H "X-Correlation-Id: test-200" \
   -d '{
     "idGrupoValidacao": 200,
-    "correlationId": "test-200",
     "parametros": [
       {"nome": "cod_cli", "valor": 1},
       {"nome": "valor_solicitado", "valor": 10000.00},
@@ -206,9 +207,9 @@ curl -X POST http://localhost:8080/api/nucleo-validacao/executar \
 ```bash
 curl -X POST http://localhost:8080/api/nucleo-validacao/executar \
   -H "Content-Type: application/json" \
+  -H "X-Correlation-Id: test-100" \
   -d '{
     "idGrupoValidacao": 100,
-    "correlationId": "test-100",
     "parametros": [
       {"nome": "cpf_cnpj", "valor": "11111111111"},
       {"nome": "canal_origem", "valor": "APP"},
@@ -222,9 +223,9 @@ curl -X POST http://localhost:8080/api/nucleo-validacao/executar \
 ```bash
 curl -X POST http://localhost:8080/api/nucleo-validacao/executar \
   -H "Content-Type: application/json" \
+  -H "X-Correlation-Id: test-300" \
   -d '{
     "idGrupoValidacao": 300,
-    "correlationId": "test-300",
     "parametros": [
       {"nome": "agencia", "valor": "0001"},
       {"nome": "conta", "valor": "10000-0"},
@@ -289,7 +290,7 @@ flowchart TD
 2. A regra principal esta simulada em PL/SQL
 3. Java atua como gateway generico
 4. O consumidor nao sabe quais procedures serao chamadas
-5. O consumidor envia apenas idGrupoValidacao + parametros
+5. O consumidor envia apenas idGrupoValidacao + parametros (correlationId via header)
 6. A configuracao define quais validacoes pertencem ao grupo
 7. Cada validacao mapeia parametros logicos para parametros reais da procedure
 8. A auditoria e independente da transacao de negocio

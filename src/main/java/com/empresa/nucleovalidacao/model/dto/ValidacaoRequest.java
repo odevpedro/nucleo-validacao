@@ -4,7 +4,6 @@ import java.util.List;
 
 public record ValidacaoRequest(
         Integer idGrupoValidacao,
-        String correlationId,
         List<ParametroEntradaDTO> parametros
 ) {
 }

@@ -9,7 +9,7 @@
 
 - [Visao Geral da Arquitetura](#visao-geral-da-arquitetura)
 - [Convencoes deste Documento](#convencoes-deste-documento)
-- [Feature: Execucao de Grupo de Consistencias](#feature-execucao-de-grupo-de-validacoes)
+- [Feature: Execucao de Grupo de Validacoes](#feature-execucao-de-grupo-de-validacoes)
 - [Feature: Auditoria Transacional Independente](#feature-auditoria-transacional-independente)
 - [Feature: Monitoramento de Compliance](#feature-monitoramento-de-compliance)
 
@@ -27,10 +27,10 @@ HTTP Request
             └── Gateway (orquestrador)
                     ├── YamlLoader (configuracao do grupo)
                     ├── ParametroValidator (validacao de entrada)
-                    ├── ConsistenciaTrackingRepository (auditoria REQUIRES_NEW)
+                    ├── ValidacaoTrackingRepository (auditoria REQUIRES_NEW)
                     ├── ProcedureExecutor (CallableStatement)
                     │         └── Oracle Database (Packages PL/SQL)
-                    └── ResultadoGrupoConsolidador (consolidacao final)
+                    └── ResultadoValidacaoConsolidador (consolidacao final)
 ```
 
 **Camadas e responsabilidades:**
@@ -55,7 +55,7 @@ HTTP Request
 
 ---
 
-# Feature: Execucao de Grupo de Consistencias
+# Feature: Execucao de Grupo de Validacoes
 
 > **Versao:** 1.0.0
 > **Implementada em:** 2026-06-03
@@ -65,7 +65,7 @@ HTTP Request
 
 ## Resumo
 
-Gateway generico que recebe `idGrupoConsistencia` + lista de parametros, descobre a configuracao do grupo no YAML, valida os parametros, executa cada validacao (procedure PL/SQL) com binding automatico, consolida os resultados e retorna JSON padronizado.
+Gateway generico que recebe `idGrupoValidacao` + lista de parametros, descobre a configuracao do grupo no YAML, valida os parametros, executa cada validacao (procedure PL/SQL) com binding automatico, consolida os resultados e retorna JSON padronizado.
 
 **Motivacao:** Simular arquitetura bancaria real onde Java atua apenas como orquestrador e a regra de negocio fica em PL/SQL.
 **Resultado:** Aplicacao consumidora envia apenas o ID do grupo e parametros; nao precisa conhecer as procedures internas.
@@ -77,11 +77,11 @@ Gateway generico que recebe `idGrupoConsistencia` + lista de parametros, descobr
 ### 1. Ponto de Entrada
 
 - **Tipo:** HTTP REST
-- **Arquivo:** `GrupoConsistenciaController.java`
-- **Rota:** `POST /api/grupos-validacao/executar`
+- **Arquivo:** `NucleoValidacaoController.java`
+- **Rota:** `POST /api/nucleo-validacao/executar`
 - **Autenticacao:** Nao implementada (projeto de estudo)
 
-A requisicao chega com `idGrupoConsistencia`, `correlationId` (opcional) e `parametros` (lista generica).
+A requisicao chega com `idGrupoValidacao` e `parametros` (lista generica). O `correlationId` e lido do header `X-Correlation-Id`; se ausente, um UUID e gerado automaticamente.
 
 ---
 
@@ -92,9 +92,9 @@ A requisicao chega com `idGrupoConsistencia`, `correlationId` (opcional) e `para
 
 | Campo | Tipo | Obrigatorio | Regra de validacao |
 |-------|------|-------------|---------------------|
-| idGrupoConsistencia | Integer | Sim | Deve existir no YAML e estar ativo |
-| correlationId | String | Nao | Se ausente, UUID e gerado |
-| parametros | List | Sim | Validacao conforme definicao do grupo |
+| idGrupoValidacao | Integer | Sim | Deve existir no YAML e estar ativo |
+| X-Correlation-Id (header) | String | Nao | Se ausente, UUID e gerado |
+| parametros | List (body) | Sim | Validacao conforme definicao do grupo |
 
 A validacao do grupo inclui:
 
@@ -111,13 +111,13 @@ A validacao do grupo inclui:
 
 ### 3. Orquestracao da Aplicacao
 
-- **Arquivo:** `GrupoConsistenciaGateway.java`
+- **Arquivo:** `NucleoValidacaoGateway.java`
 
 Fluxo completo:
 
 1. Normalizar `correlationId` (gerar UUID se ausente)
 2. Converter `List<ParametroEntradaDTO>` para `Map<String, Object>`
-3. Buscar configuracao do grupo pelo `idGrupoConsistencia` no YAML
+3. Buscar configuracao do grupo pelo `idGrupoValidacao` no YAML
 4. Se grupo nao existir, retornar `FALHA_VALIDACAO`
 5. Se grupo estiver inativo, retornar `FALHA_VALIDACAO`
 6. Criar rastro do grupo com estado `CRIADO`
@@ -130,9 +130,9 @@ Fluxo completo:
     - Executar procedure via `ProcedureExecutor`
     - Se falhou e `abortar_grupo_em_falha=true`, interromper proximas
     - Atualizar rastro da validacao
-12. Consolidar resultado do grupo via `ResultadoGrupoConsolidador`
+12. Consolidar resultado do grupo via `ResultadoValidacaoConsolidador`
 13. Atualizar rastro do grupo com estado final
-14. Retornar `GrupoConsistenciaResponseDTO`
+14. Retornar `ValidacaoResponseDTO`
 
 ---
 
@@ -141,8 +141,8 @@ Fluxo completo:
 | Regra | Descricao | Localizacao no Codigo |
 |-------|-----------|----------------------|
 | Toda regra de negocio esta em PL/SQL | Java nao contem regra bancaria | Packages PL/SQL no Oracle |
-| Consolidacao do grupo | Define estado final e resultado de negocio | `ResultadoGrupoConsolidador.java` |
-| Auditoria REQUIRES_NEW | Auditoria sobrevive a rollback de negocio | `ConsistenciaTrackingRepository.java` |
+| Consolidacao do grupo | Define estado final e resultado de negocio | `ResultadoValidacaoConsolidador.java` |
+| Auditoria REQUIRES_NEW | Auditoria sobrevive a rollback de negocio | `ValidacaoTrackingRepository.java` |
 | Binding origem/destino | Mapeia parametro logico para parametro da procedure | `configuracoes-grupos.yaml` |
 | Falha tecnica != reproducao negocio | Erro SQL separado de resultado de negocio | `SqlErrorMapper.java` |
 
@@ -154,8 +154,8 @@ Fluxo completo:
 
 | Repository | Operacao | Arquivo |
 |------------|----------|---------|
-| ConsistenciaTrackingRepository | INSERT/UPDATE RASTRO_GRUPO | `ConsistenciaTrackingRepository.java` |
-| ConsistenciaTrackingRepository | INSERT/UPDATE RASTRO_CONSISTENCIA | `ConsistenciaTrackingRepository.java` |
+| ValidacaoTrackingRepository | INSERT/UPDATE RASTRO_VALIDACAO | `ValidacaoTrackingRepository.java` |
+| ValidacaoTrackingRepository | INSERT/UPDATE RASTRO_EXECUCAO | `ValidacaoTrackingRepository.java` |
 | ComplianceRepository | SELECT com agregacao | `ComplianceRepository.java` |
 
 **Integracoes externas:**
@@ -173,16 +173,16 @@ Fluxo completo:
 ```json
 {
   "idGrupoSolicitacao": 90001,
-  "idGrupoConsistencia": 200,
-  "nomeGrupoConsistencia": "ANALISE_CREDITO_PESSOAL",
+  "idGrupoValidacao": 200,
+  "nomeGrupoValidacao": "ANALISE_CREDITO_PESSOAL",
   "estadoGrupo": "FINALIZADO_SUCESSO",
   "resultadoNegocioGrupo": "APROVADO",
-  "mensagemGrupoConsistencia": "Grupo de validacoes executado com sucesso",
+  "mensagemGrupoValidacao": "Grupo de validacoes executado com sucesso",
   "correlationId": "uuid",
   "validacoes": [
     {
-      "idConsistencia": 201,
-      "nomeConsistencia": "calcular_score_interno",
+      "idValidacao": 201,
+      "nomeValidacao": "calcular_score_interno",
       "procedureRef": "PK_SCORE.CALCULAR_SCORE_INTERNO",
       "tipo": "LEITURA",
       "estadoTecnico": "SUCESSO",
@@ -199,8 +199,8 @@ Fluxo completo:
 
 ```json
 {
-  "idGrupoConsistencia": 200,
-  "nomeGrupoConsistencia": "ANALISE_CREDITO_PESSOAL",
+  "idGrupoValidacao": 200,
+  "nomeGrupoValidacao": "ANALISE_CREDITO_PESSOAL",
   "estadoGrupo": "FALHA_VALIDACAO",
   "mensagem": "Parametros de entrada invalidos",
   "correlationId": "uuid",
@@ -241,8 +241,8 @@ sequenceDiagram
     participant Executor
     participant OracleDB
 
-    Client->>Controller: POST /api/grupos-validacao/executar
-    Controller->>Gateway: executar(request)
+    Client->>Controller: POST /api/nucleo-validacao/executar
+    Controller->>Gateway: executar(request, correlationIdHeader)
     Gateway->>YamlLoader: getGrupo(idGrupo)
     YamlLoader-->>Gateway: GrupoDefinicaoDTO
     Gateway->>TrackingRepo: criarRastroGrupo(CRIADO)
@@ -252,15 +252,15 @@ sequenceDiagram
     Validator-->>Gateway: erros (ou vazio)
     Gateway->>TrackingRepo: atualizarEstadoGrupo(EXECUTANDO)
     loop Para cada validacao
-        Gateway->>TrackingRepo: criarRastroConsistencia(EXECUTANDO)
+        Gateway->>TrackingRepo: criarRastroExecucao(EXECUTANDO)
         Gateway->>Executor: executar(validacao, parametros)
         Executor->>OracleDB: {call PK_SCORE.CALCULAR_SCORE_INTERNO(?,?,?,?)}
         OracleDB-->>Executor: resultado
-        Executor-->>Gateway: ConsistenciaResultadoDTO
-        Gateway->>TrackingRepo: atualizarRastroConsistencia
+        Executor-->>Gateway: ValidacaoResultadoDTO
+        Gateway->>TrackingRepo: atualizarRastroExecucao
     end
     Gateway->>TrackingRepo: atualizarEstadoGrupo(FINALIZADO_*)
-    Gateway-->>Controller: GrupoConsistenciaResponseDTO
+    Gateway-->>Controller: ValidacaoResponseDTO
     Controller-->>Client: 200 OK
 ```
 
@@ -310,13 +310,13 @@ sequenceDiagram
 
 ## Resumo
 
-Registro de auditoria em duas tabelas (`RASTRO_GRUPO` e `RASTRO_CONSISTENCIA`) com transacao independente da execucao de negocio, garantindo que mesmo em caso de rollback nas procedures de escrita, o rastro permaneca persistido.
+Registro de auditoria em duas tabelas (`RASTRO_VALIDACAO` e `RASTRO_EXECUCAO`) com transacao independente da execucao de negocio, garantindo que mesmo em caso de rollback nas procedures de escrita, o rastro permaneca persistido.
 
 ## Fluxo
 
-1. Antes da execucao: INSERT em `RASTRO_GRUPO` com estado `CRIADO`
+1. Antes da execucao: INSERT em `RASTRO_VALIDACAO` com estado `CRIADO`
 2. Durante validacao: UPDATE para `VALIDANDO`
-3. Antes de cada validacao: INSERT em `RASTRO_CONSISTENCIA` com `EXECUTANDO`
+3. Antes de cada validacao: INSERT em `RASTRO_EXECUCAO` com `EXECUTANDO`
 4. Apos cada validacao: UPDATE com resultado tecnico, negocio, tempo, payload
 5. Final: UPDATE do grupo com estado consolidado e JSON dos resultados
 
@@ -339,7 +339,7 @@ Job agendado a cada 15 minutos que consulta as tabelas de rastro para detectar g
 ## Fluxo
 
 1. `ComplianceAlertService.verificarAnomalias()` executa a cada 900000ms (15 min)
-2. Query agrega `RASTRO_GRUPO` + `RASTRO_CONSISTENCIA` por grupo
+2. Query agrega `RASTRO_VALIDACAO` + `RASTRO_EXECUCAO` por grupo
 3. Calcula percentual de `FALHA_AUTORIZACAO`
 4. Se > 20%, gera `AlertaSegurancaDTO`
 5. Alertas disponiveis via `GET /admin/compliance/alertas`
