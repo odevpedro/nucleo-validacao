@@ -1,21 +1,25 @@
 # nucleo-validacao
 
-> Gateway generico para execucao de grupos de validacoes bancarias via PL/SQL. A aplicacao Java atua como biblioteca que descobre, valida e executa procedures Oracle associadas a contextos de negocio bancario, consolidando resultados e registrando auditoria independente.
+> **Java 21+ | Spring Boot 3.2 | Oracle Database Free 23c | PL/SQL | Maven | Docker | REST API | Spring Data JPA | Spring JDBC | Jackson YAML | Feign Client | Testcontainers**
+
+> Gateway generico para execucao de grupos de validacoes bancarias via PL/SQL. A aplicacao Java atua como intermediario que descobre, valida e executa procedures Oracle associadas a contextos de negocio bancario, consolidando resultados e registrando auditoria independente.
 
 ## Stack & Arquitetura
 
 | Camada        | Tecnologia                          |
 |---------------|--------------------------------------|
-| Runtime       | Java 17+                             |
-| Framework     | Spring Boot 3.x                      |
+| Runtime       | Java 21+ (Corretto)                  |
+| Framework     | Spring Boot 3.2.5                    |
 | JDBC          | Spring JDBC + Oracle JDBC (CallableStatement) |
 | Banco de dados| Oracle Database Free 23c            |
+| JPA           | Spring Data JPA / Hibernate 6 (validate) |
 | Auditoria     | @Transactional(REQUIRES_NEW)         |
-| Configuracao  | YAML + SnakeYAML                    |
-| Container     | Docker Compose                      |
-| Testes        | JUnit 5 + AssertJ + Testcontainers  |
+| Configuracao  | YAML + Jackson YAML (snake_case)    |
+| Container     | Docker Compose (gvenzl/oracle-free:slim-faststart) |
+| Testes        | JUnit 5 + AssertJ + Testcontainers (oracle-free) |
+| Porta padrao  | 8081                                 |
 
-> Padrao arquitetural: **Gateway/Mediator** com configuracao declarativa em YAML, auditoria transacional independente e execucao via JDBC puro.
+> Padrao arquitetural: **Gateway/Mediator** com configuracao declarativa em YAML, auditoria transacional independente e execucao via JDBC puro sobre PL/SQL.
 
 ## Estrutura de Pastas
 
@@ -96,7 +100,7 @@ docker compose up -d
 mvn clean spring-boot:run
 ```
 
-A API estara disponivel em `http://localhost:8080`.
+A API estara disponivel em `http://localhost:8081`.
 
 ### Oracle Database
 
@@ -115,126 +119,13 @@ Os scripts SQL em `database/init/` sao executados automaticamente na inicializac
 
 ## Endpoints
 
-### POST /api/nucleo-validacao/executar
+| Metodo | Rota                            | Descricao                            |
+|--------|----------------------------------|--------------------------------------|
+| POST   | `/api/nucleo-validacao/executar` | Executa um grupo de validacoes       |
+| GET    | `/admin/compliance/alertas`      | Alertas de seguranca (ultimos 7 dias) |
 
-Executa um grupo de validacoes.
-
-**Request (200 - ANALISE_CREDITO_PESSOAL):**
-
-```json
-{
-  "idGrupoValidacao": 200,
-  "parametros": [
-    { "nome": "cod_cli", "valor": 1 },
-    { "nome": "valor_solicitado", "valor": 10000.00 },
-    { "nome": "qtd_parcelas", "valor": 24 }
-  ]
-}
-```
-
-O `correlationId` e enviado via header `X-Correlation-Id`. Se ausente, um UUID e gerado automaticamente.
-
-**Response (200 - Sucesso):**
-
-```json
-{
-  "idGrupoSolicitacao": 90001,
-  "idGrupoValidacao": 200,
-  "nomeGrupoValidacao": "ANALISE_CREDITO_PESSOAL",
-  "estadoGrupo": "FINALIZADO_SUCESSO",
-  "resultadoNegocioGrupo": "APROVADO",
-  "mensagemGrupoValidacao": "Grupo de validacoes executado com sucesso",
-  "correlationId": "6e0a23e0-5b9a-43e1-bc44-b1ad7dfe11d22",
-  "validacoes": [
-    {
-      "idValidacao": 201,
-      "nomeValidacao": "calcular_score_interno",
-      "procedureRef": "PK_SCORE.CALCULAR_SCORE_INTERNO",
-      "tipo": "LEITURA",
-      "estadoTecnico": "SUCESSO",
-      "resultadoNegocio": "APROVADO",
-      "tempoMs": 37,
-      "mensagens": ["Score interno aprovado"],
-      "payload": { "score": 850, "scoreMinimo": 600 }
-    }
-  ]
-}
-```
-
-**Response (400 - Falha de validacao):**
-
-```json
-{
-  "idGrupoValidacao": 200,
-  "nomeGrupoValidacao": "ANALISE_CREDITO_PESSOAL",
-  "estadoGrupo": "FALHA_VALIDACAO",
-  "mensagem": "Parametros de entrada invalidos",
-  "correlationId": "abc-123",
-  "erros": [
-    {
-      "campo": "valor_solicitado",
-      "mensagem": "Parametro obrigatorio nao informado",
-      "valorRecebido": null
-    }
-  ]
-}
-```
-
-### GET /admin/compliance/alertas
-
-Retorna alertas de seguranca (falhas de autorizacao > 20% nos ultimos 7 dias).
-
-## Exemplos de curl
-
-### Grupo 200 - Sucesso
-
-```bash
-curl -X POST http://localhost:8080/api/nucleo-validacao/executar \
-  -H "Content-Type: application/json" \
-  -H "X-Correlation-Id: test-200" \
-  -d '{
-    "idGrupoValidacao": 200,
-    "parametros": [
-      {"nome": "cod_cli", "valor": 1},
-      {"nome": "valor_solicitado", "valor": 10000.00},
-      {"nome": "qtd_parcelas", "valor": 24}
-    ]
-  }'
-```
-
-### Grupo 100 - Abertura de Conta
-
-```bash
-curl -X POST http://localhost:8080/api/nucleo-validacao/executar \
-  -H "Content-Type: application/json" \
-  -H "X-Correlation-Id: test-100" \
-  -d '{
-    "idGrupoValidacao": 100,
-    "parametros": [
-      {"nome": "cpf_cnpj", "valor": "11111111111"},
-      {"nome": "canal_origem", "valor": "APP"},
-      {"nome": "biometria_hash", "valor": "hash1234567890abc"}
-    ]
-  }'
-```
-
-### Grupo 300 - PIX
-
-```bash
-curl -X POST http://localhost:8080/api/nucleo-validacao/executar \
-  -H "Content-Type: application/json" \
-  -H "X-Correlation-Id: test-300" \
-  -d '{
-    "idGrupoValidacao": 300,
-    "parametros": [
-      {"nome": "agencia", "valor": "0001"},
-      {"nome": "conta", "valor": "10000-0"},
-      {"nome": "chave_destino", "valor": "22222222222"},
-      {"nome": "valor", "valor": 100.00},
-      {"nome": "id_solicitacao", "valor": "PIX-TEST-001"}
-    ]
-  }'
-```
+Exemplos detalhados de request/response → [`docs/api-examples.md`](docs/api-examples.md)
+Exemplos de curl → [`docs/curl-examples.md`](docs/curl-examples.md)
 
 ## Como simular falha de autorizacao
 
